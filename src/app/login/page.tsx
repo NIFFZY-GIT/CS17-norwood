@@ -20,20 +20,19 @@ const itemVariants: Variants = {
   visible: { y: 0, opacity: 1, transition: { type: 'spring', stiffness: 100 } },
 };
 
-// --- NEW: Image Slideshow Component (Left Side) ---
+// --- Image Slideshow Component (No changes here) ---
 const ImageSlideshow = () => {
   const images = [
     '/bite1.png',
     '/bathalabite.png',
-   '/logo.png',
-     // Added another image for variety
+    '/logo.png',
   ];
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   useEffect(() => {
     const intervalId = setInterval(() => {
       setCurrentImageIndex((prevIndex) => (prevIndex + 1) % images.length);
-    }, 5000); // Change image every 5 seconds
+    }, 5000);
 
     return () => clearInterval(intervalId);
   }, [images.length]);
@@ -53,7 +52,6 @@ const ImageSlideshow = () => {
           sizes="(max-width: 1024px) 0vw, 50vw"
         />
       ))}
-      {/* Overlay for aesthetic */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent" />
     </div>
   );
@@ -75,46 +73,64 @@ export default function ModernLoginPage() {
     window.addEventListener('mousemove', handleMouseMove);
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, []);
-
+  
+  // ✅ --- THIS IS THE FIXED FUNCTION ---
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     setError('');
     setIsLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    if (form.email === 'test@example.com' && form.password === 'password') {
-      router.push('/dashboard');
-    } else {
-      setError('Invalid email or password.');
+
+    try {
+      const res = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form), // Send the form state directly
+      });
+
+      if (res.ok) {
+        // Login successful, the API sets the cookie.
+        // Redirect to the user's dashboard or a protected page.
+        router.push('/dashboard'); 
+      } else {
+        // Handle login errors from the API
+        const data = await res.json().catch(() => ({ message: 'Invalid email or password.' }));
+        setError(data.message || 'Something went wrong.');
+      }
+    } catch (err) {
+      // Handle network or unexpected errors
+      console.error('Login fetch error:', err);
+      setError('An unexpected error occurred. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   }
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center p-4 bg-gray-900 text-white overflow-hidden">
-      {/* Spotlight Effect */}
+      {/* Spotlight Effect - Changed color to match register page */}
       <div
         className="pointer-events-none fixed inset-0 z-0 transition duration-300"
         style={{
-          background: `radial-gradient(600px at ${mousePosition.x}px ${mousePosition.y}px, rgba(45, 212, 191, 0.15), transparent 80%)`,
+          background: `radial-gradient(600px at ${mousePosition.x}px ${mousePosition.y}px, rgba(34, 197, 94, 0.2), transparent 80%)`,
         }}
       />
 
-      <div className="relative z-10 w-full max-w-4xl flex min-h-[600px] bg-gray-900/50 backdrop-blur-xl rounded-3xl border border-teal-500/20 shadow-2xl shadow-teal-500/10 overflow-hidden">
+      {/* Changed border color to match register page */}
+      <div className="relative z-10 w-full max-w-4xl flex min-h-[600px] bg-gray-900/50 backdrop-blur-xl rounded-3xl border border-green-500/20 shadow-2xl overflow-hidden">
         
-        {/* MODIFIED: Left Side now uses the new Slideshow component */}
         <div className="hidden lg:block lg:w-1/2 relative">
           <ImageSlideshow />
         </div>
 
-        {/* Right Side: Login Form (No changes here) */}
         <div className="w-full lg:w-1/2 p-8 md:p-12 flex flex-col justify-center">
           <motion.div initial="hidden" animate="visible" variants={containerVariants} className="w-full">
             <motion.div variants={itemVariants} className="text-center mb-8">
-              <div className="inline-block p-4 bg-teal-500/10 rounded-full mb-4">
-                <Coffee className="w-10 h-10 text-teal-400" />
+              {/* Changed icon color to match register page */}
+              <div className="inline-block p-4 bg-green-500/10 rounded-full mb-4">
+                <Coffee className="w-10 h-10 text-green-400" />
               </div>
               <h1 className="text-4xl font-bold text-gray-100 tracking-tight">Welcome Back</h1>
-              <p className="text-gray-400 mt-2">Sign in to steep in flavor.</p>
+              <p className="text-gray-400 mt-2">Sign in to continue your journey.</p>
             </motion.div>
             
             {error && (
@@ -132,7 +148,7 @@ export default function ModernLoginPage() {
                 <input
                   type="email"
                   placeholder="Email Address"
-                  className="w-full pl-12 pr-4 py-3 bg-gray-800/60 rounded-lg border border-gray-700 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/50 transition-all duration-300 outline-none"
+                  className="w-full pl-12 pr-4 py-3 bg-gray-800/60 rounded-lg border border-gray-700 focus:border-green-500 focus:ring-2 focus:ring-green-500/50 transition-all duration-300 outline-none"
                   value={form.email}
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
                   disabled={isLoading}
@@ -145,7 +161,7 @@ export default function ModernLoginPage() {
                 <input
                   type="password"
                   placeholder="Password"
-                  className="w-full pl-12 pr-4 py-3 bg-gray-800/60 rounded-lg border border-gray-700 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/50 transition-all duration-300 outline-none"
+                  className="w-full pl-12 pr-4 py-3 bg-gray-800/60 rounded-lg border border-gray-700 focus:border-green-500 focus:ring-2 focus:ring-green-500/50 transition-all duration-300 outline-none"
                   value={form.password}
                   onChange={(e) => setForm({ ...form, password: e.target.value })}
                   disabled={isLoading}
@@ -159,7 +175,7 @@ export default function ModernLoginPage() {
                   className={`w-full font-semibold py-3 rounded-lg transition-all duration-300 ease-in-out ${
                     isLoading
                       ? 'bg-gray-600 cursor-not-allowed'
-                      : 'bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-600 hover:to-emerald-700 shadow-lg shadow-teal-500/20 hover:shadow-emerald-500/40'
+                      : 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 shadow-lg shadow-green-500/20 hover:shadow-emerald-500/40'
                   }`}
                   disabled={isLoading}
                 >
@@ -170,7 +186,7 @@ export default function ModernLoginPage() {
 
             <motion.p variants={itemVariants} className="mt-8 text-sm text-center text-gray-400">
               Don&apos;t have an account?{' '}
-              <a href="/register" className="font-semibold text-teal-400 hover:text-teal-300 hover:underline underline-offset-2">
+              <a href="/register" className="font-semibold text-green-400 hover:text-green-300 hover:underline underline-offset-2">
                 Register
               </a>
             </motion.p>

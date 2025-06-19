@@ -41,9 +41,8 @@ const ImageSlideshow = () => {
           src={src}
           alt="Rotating Image"
           fill
-          className={`object-cover transition-opacity duration-1000 ease-in-out ${
-            index === currentImageIndex ? 'opacity-100' : 'opacity-0'
-          }`}
+          className={`object-cover transition-opacity duration-1000 ease-in-out ${index === currentImageIndex ? 'opacity-100' : 'opacity-0'
+            }`}
           priority={index === 0}
           sizes="(max-width: 1024px) 0vw, 50vw"
         />
@@ -127,9 +126,9 @@ export default function RegisterPage() {
             {error && <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-4 text-sm text-center text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg py-2">{error}</motion.div>}
 
             <motion.form onSubmit={handleRegister} variants={containerVariants} className="space-y-5">
-              
+
               {/* REMOVED: The entire username input field has been deleted from here. */}
-            
+
               <motion.div variants={itemVariants} className="relative">
                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input type="email" placeholder="Email Address" className="w-full pl-12 pr-4 py-3 bg-gray-800/60 rounded-lg border border-gray-700 focus:border-green-500 focus:ring-2 focus:ring-green-500/50 transition-all duration-300 outline-none" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} disabled={isLoading} required />
