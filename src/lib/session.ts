@@ -1,4 +1,5 @@
 // src/lib/session.ts
+
 'use server';
 
 import 'server-only';
@@ -12,22 +13,19 @@ if (!secretKey) {
 }
 const key = new TextEncoder().encode(secretKey);
 
-// ✅ Add 'role' to the payload
 interface AppJWTPayload extends JWTPayload {
   userId: string;
   username: string;
-  role: string; // <-- ADDED
+  role: string;
 }
 
-// ✅ Add 'role' to the session data
 export interface SessionData {
   userId: string;
   username:string;
-  role: string; // <-- ADDED
+  role: string;
   expires?: Date;
 }
 
-// ✅ Update 'encrypt' to accept 'role'
 export async function encrypt(payload: { userId: string; username: string; role: string }): Promise<string> {
   return new SignJWT(payload as AppJWTPayload)
     .setProtectedHeader({ alg: 'HS256' })
@@ -36,18 +34,23 @@ export async function encrypt(payload: { userId: string; username: string; role:
     .sign(key);
 }
 
-// ✅ Update 'decrypt' to extract 'role'
-// In src/lib/session.ts
-
 export async function decrypt(sessionToken?: string): Promise<SessionData | null> {
-  if (!sessionToken) return null;
+  console.log("\n--- DECRYPT FUNCTION CALLED ---");
+
+  if (!sessionToken) {
+    console.log("[decrypt] No session token provided. Returning null.");
+    return null;
+  }
+  
   try {
+    console.log("[decrypt] Attempting to verify token...");
     const { payload } = await jwtVerify<AppJWTPayload>(sessionToken, key, {
       algorithms: ['HS256'],
     });
-
+    console.log("[decrypt] TOKEN VERIFIED SUCCESSFULLY. Payload:", payload);
+    
     if (!payload.userId || !payload.username || !payload.role) {
-      console.error('JWT payload is missing required custom fields.');
+      console.error('[decrypt] JWT payload is missing required custom fields.');
       return null;
     }
 
@@ -58,16 +61,16 @@ export async function decrypt(sessionToken?: string): Promise<SessionData | null
       expires: payload.exp ? new Date(payload.exp * 1000) : undefined,
     };
   } catch (error) {
-    // ✅ USE the 'error' variable for logging
-    console.error('Failed to decrypt session token:', error);
+    // ✅ THIS IS THE MOST IMPORTANT LOG. IF YOU SEE THIS, THIS IS YOUR PROBLEM.
+    console.error('[decrypt] TOKEN VERIFICATION FAILED. Error details:', error);
     return null;
   }
 }
 
-// ✅ Update 'createSessionCookie' to accept 'role'
 export async function createSessionCookie(userId: string, username: string, role: string) {
+  console.log(`[createSessionCookie] Preparing to create cookie for user: ${username}, role: ${role}`);
   const cookieExpiresAt = new Date(Date.now() + 60 * 60 * 1000);
-  const sessionToken = await encrypt({ userId, username, role }); // <-- Pass role here
+  const sessionToken = await encrypt({ userId, username, role });
 
   const cookieStore = await cookies();
   cookieStore.set('session', sessionToken, {
@@ -77,10 +80,11 @@ export async function createSessionCookie(userId: string, username: string, role
     sameSite: 'lax',
     path: '/',
   });
-  console.log(`Session cookie created for user: ${username} with role: ${role}`);
+  console.log(`[createSessionCookie] Session cookie SET successfully.`);
 }
+
 export async function getSession(): Promise<SessionData | null> {
-  const cookieStore = await cookies(); // Correctly awaiting cookies()
+  const cookieStore = await cookies();
   const sessionCookieValue = cookieStore.get('session')?.value;
 
   if (!sessionCookieValue) {
@@ -89,18 +93,14 @@ export async function getSession(): Promise<SessionData | null> {
   return decrypt(sessionCookieValue);
 }
 
-/**
- * Deletes the session cookie.
- * Intended for use in Server Actions or Route Handlers.
- */
 export async function deleteSessionCookie() {
-  const cookieStore = await cookies(); // Correctly awaiting cookies()
-  cookieStore.set('session', '', { // Set to empty with past expiration
+  const cookieStore = await cookies();
+  cookieStore.set('session', '', {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     expires: new Date(0),
     sameSite: 'lax',
     path: '/',
   });
-  console.log('Session cookie deleted.');
+  console.log('[deleteSessionCookie] Session cookie deleted.');
 }

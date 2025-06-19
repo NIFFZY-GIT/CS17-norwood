@@ -1,68 +1,70 @@
 // src/middleware.ts
+
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { decrypt, type SessionData } from '@/lib/session';
 
-// Define your routes clearly
 const ADMIN_ONLY_ROUTES = ['/dashboard'];
 const PUBLIC_ONLY_ROUTES = ['/login', '/register'];
 
 export async function middleware(request: NextRequest) {
+  console.log(`\n--- MIDDLEWARE RUNNING FOR: ${request.nextUrl.pathname} ---`);
+  
   const { pathname } = request.nextUrl;
   const sessionCookie = request.cookies.get('session');
 
-  // 1. Decrypt the session token to get user data
+  if (sessionCookie) {
+    console.log("[Middleware] Found 'session' cookie in the request headers.");
+  } else {
+    console.log("[Middleware] Did NOT find 'session' cookie in the request headers.");
+  }
+  
   let session: SessionData | null = null;
   if (sessionCookie?.value) {
-    try {
-      session = await decrypt(sessionCookie.value);
-    } catch (error) {
-      console.error("Middleware: Failed to decrypt token, treating as logged out.", error);
+    session = await decrypt(sessionCookie.value); // decrypt() will log its own details
+    if(session) {
+        console.log("[Middleware] Decryption successful. User is authenticated.");
+    } else {
+        console.log("[Middleware] Decryption failed. User is NOT authenticated.");
     }
   }
 
-  // 2. Determine user's authentication and authorization status
   const isAuthenticated = !!session?.userId;
   const userRole = session?.role;
-
-  // 3. Check if the user is trying to access an admin-only route
+  
   const isAccessingAdminRoute = ADMIN_ONLY_ROUTES.some(route => pathname.startsWith(route));
 
   if (isAccessingAdminRoute) {
     if (!isAuthenticated) {
       const loginUrl = new URL('/login', request.url);
       loginUrl.searchParams.set('redirect_to', pathname);
-      console.log(`[Middleware] Unauthenticated access to ADMIN route ${pathname}. Redirecting to login.`);
+      console.log(`[Middleware] RULE: Unauthenticated access to ADMIN route. Redirecting to login.`);
       return NextResponse.redirect(loginUrl);
     }
 
-    // ✅ THE FIX IS HERE.
-    // We add a check for `session` before using it.
     if (session && userRole !== 'admin') {
-      console.log(`[Middleware] Non-admin user ('${session.username}') attempted to access ${pathname}. Redirecting to home.`);
+      console.log(`[Middleware] RULE: Non-admin user ('${session.username}') on ADMIN route. Redirecting to home.`);
       return NextResponse.redirect(new URL('/', request.url));
     }
   }
 
-  // 4. Handle public-only routes (like /login)
   if (isAuthenticated && PUBLIC_ONLY_ROUTES.includes(pathname)) {
     const redirectUrl = userRole === 'admin' ? '/dashboard' : '/';
-    console.log(`[Middleware] Authenticated user accessing ${pathname}. Redirecting to ${redirectUrl}.`);
+    console.log(`[Middleware] RULE: Authenticated user on public route. Redirecting to ${redirectUrl}.`);
     return NextResponse.redirect(new URL(redirectUrl, request.url));
   }
-
-  // 5. If the session cookie was invalid and decryption failed, clear it.
+  
   if (sessionCookie && !session) {
     const response = NextResponse.next();
-    console.log("[Middleware] Clearing invalid session cookie.");
+    console.log("[Middleware] RULE: Invalid/expired cookie found. Clearing it.");
     response.cookies.set('session', '', { maxAge: -1, path: '/' });
     return response;
   }
 
+  console.log("[Middleware] No specific rules matched. Allowing request to proceed.");
   return NextResponse.next();
 }
 
-// Config remains the same
 export const config = {
   matcher: [
     '/((?!api|_next/static|_next/image|favicon.ico).*)',

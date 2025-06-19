@@ -1,7 +1,8 @@
-"use client";
+'use client';
 
+// ✅ IMPORT usePathname
 import { useEffect, useState, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
@@ -11,49 +12,56 @@ import { User, ShoppingCart, LayoutDashboard, LogOut } from "lucide-react";
 
 const Navbar = () => {
   const router = useRouter();
-  // State for user authentication and data
+  // ✅ GET THE CURRENT PATHNAME
+  const pathname = usePathname(); 
+
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
-
-  // State for UI toggles
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-
-  // Ref for closing the dropdown on outside click
   const profileMenuRef = useRef<HTMLDivElement>(null);
 
-  // Check user session on component mount
+  // ✅ THIS IS THE CRITICAL FIX
+  // The useEffect hook will now re-run whenever the pathname changes,
+  // which includes after login/logout redirects and any other navigation.
   useEffect(() => {
     const checkUserSession = async () => {
+      console.log("--- NAVBAR: Checking user session... ---");
       try {
-        const res = await fetch('/api/session');
+        const res = await fetch('/api/session', { cache: 'no-store' });
+        
         if (res.ok) {
-          const data = await res.json(); // Data will include { userId, username, role }
+          const data = await res.json();
+          console.log("NAVBAR: Session found, setting logged in state.", data);
           setIsLoggedIn(true);
           setUserEmail(data.username);
           setUserRole(data.role);
         } else {
+          console.log("NAVBAR: No session found, setting logged out state.");
           setIsLoggedIn(false);
           setUserEmail(null);
           setUserRole(null);
         }
       } catch (error) {
-        console.error("Failed to fetch session:", error);
+        console.error("NAVBAR: Failed to fetch session:", error);
         setIsLoggedIn(false);
         setUserEmail(null);
         setUserRole(null);
       }
     };
     checkUserSession();
-  }, []);
+  }, [pathname]); // ✅ ADD 'pathname' TO THE DEPENDENCY ARRAY
+
+  // The rest of your Navbar component is correct and does not need changes.
+  // ... (other useEffects, handlers, and JSX)
 
   // Handle navbar background on scroll
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 50);
-      if (menuOpen) setMenuOpen(false); // Close mobile menu on scroll
+      if (menuOpen) setMenuOpen(false);
     };
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
@@ -81,14 +89,12 @@ const Navbar = () => {
     setIsProfileMenuOpen(false);
   };
 
-  // Handle user logout
   const handleLogout = async () => {
     await fetch('/api/logout', { method: 'POST' });
     setIsLoggedIn(false);
     setUserEmail(null);
     setUserRole(null);
     setIsProfileMenuOpen(false);
-    router.push('/');
     router.refresh();
   };
 
@@ -179,7 +185,6 @@ const Navbar = () => {
                               <span>Admin Dashboard</span>
                           </Link>
                         )}
-                        {/* You can add more links here for all logged-in users */}
                       </div>
 
                       {/* Logout Button */}

@@ -2,7 +2,7 @@
 import { NextResponse, NextRequest } from 'next/server';
 import clientPromise from '@/lib/mongodb';
 import bcrypt from 'bcryptjs';
-import { createSessionCookie } from '@/lib/session'; // Assuming you have this helper
+import { createSessionCookie } from '@/lib/session';
 
 export async function POST(req: NextRequest) {
   try {
@@ -16,7 +16,6 @@ export async function POST(req: NextRequest) {
       );
     }
     
-    // Server config checks are good practice
     if (!process.env.JWT_SECRET_KEY || !process.env.MONGODB_DB_NAME) {
       console.error('FATAL: Server configuration error. Check .env variables.');
       return NextResponse.json(
@@ -38,8 +37,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // ✅ THE CRITICAL FIX IS HERE
-    // We ensure the code checks for the 'password' field, not 'passwordHash'.
     if (!user.password || typeof user.password !== 'string') {
         console.error(`Login error: User with email "${email}" has no 'password' field or it's invalid.`);
         return NextResponse.json(
@@ -47,9 +44,7 @@ export async function POST(req: NextRequest) {
             { status: 500 }
         );
     }
-
-    // ✅ AND THE SECOND PART OF THE FIX IS HERE
-    // We compare the incoming password with the 'password' field from the database.
+    
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
@@ -59,14 +54,23 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // If login is successful, create the session
+    // ✅ GET THE USER'S ROLE
+    // We add a fallback to 'user' in case the role field doesn't exist on an old document.
+    const userRole = user.role || 'user';
     const userId = user._id.toString();
-    const sessionDisplayName = user.email; // Use email as display name
-    await createSessionCookie(userId, sessionDisplayName);
+    const sessionDisplayName = user.email;
 
-    console.log(`Login successful for user: ${sessionDisplayName}, ID: ${userId}`);
+    // ✅ PASS THE ROLE WHEN CREATING THE SESSION COOKIE
+    await createSessionCookie(userId, sessionDisplayName, userRole);
+
+    console.log(`Login successful for user: ${sessionDisplayName}, Role: ${userRole}`);
+    
+    // ✅ INCLUDE THE ROLE IN THE RESPONSE TO THE FRONTEND
     return NextResponse.json(
-      { message: 'Login successful', user: { id: userId, name: sessionDisplayName } },
+      { 
+        message: 'Login successful', 
+        user: { id: userId, name: sessionDisplayName, role: userRole } 
+      },
       { status: 200 }
     );
 

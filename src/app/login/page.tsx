@@ -6,7 +6,7 @@ import { motion, Variants } from 'framer-motion';
 import { Mail, Lock, Coffee } from 'lucide-react';
 import Image from 'next/image';
 
-// --- Motion Variants (No changes here) ---
+// --- Motion Variants ---
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
   visible: {
@@ -20,7 +20,7 @@ const itemVariants: Variants = {
   visible: { y: 0, opacity: 1, transition: { type: 'spring', stiffness: 100 } },
 };
 
-// --- Image Slideshow Component (No changes here) ---
+// --- Slideshow Left Side Component ---
 const ImageSlideshow = () => {
   const images = [
     '/bite1.png',
@@ -74,7 +74,6 @@ export default function ModernLoginPage() {
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, []);
   
-  // ✅ --- THIS IS THE FIXED FUNCTION ---
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     setError('');
@@ -84,48 +83,44 @@ export default function ModernLoginPage() {
       const res = await fetch('/api/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form), // Send the form state directly
+        body: JSON.stringify(form),
       });
 
       if (res.ok) {
-        // Login successful, the API sets the cookie.
-        // Redirect to the user's dashboard or a protected page.
-        router.push('/dashboard'); 
+        // On success, we simply refresh the page.
+        // The middleware will detect the new session cookie and handle the redirect.
+        // This avoids race conditions and is the most reliable pattern.
+        router.refresh();
+
       } else {
-        // Handle login errors from the API
         const data = await res.json().catch(() => ({ message: 'Invalid email or password.' }));
         setError(data.message || 'Something went wrong.');
+        setIsLoading(false); // Stop loading on a failed login attempt
       }
     } catch (err) {
-      // Handle network or unexpected errors
       console.error('Login fetch error:', err);
       setError('An unexpected error occurred. Please try again.');
-    } finally {
-      setIsLoading(false);
+      setIsLoading(false); // Stop loading on a network error
     }
+    // No `finally` block is needed because loading is handled in each failure case.
+    // On success, the page will navigate away, so we don't need to stop the loader.
   }
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center p-4 bg-gray-900 text-white overflow-hidden">
-      {/* Spotlight Effect - Changed color to match register page */}
       <div
         className="pointer-events-none fixed inset-0 z-0 transition duration-300"
         style={{
           background: `radial-gradient(600px at ${mousePosition.x}px ${mousePosition.y}px, rgba(34, 197, 94, 0.2), transparent 80%)`,
         }}
       />
-
-      {/* Changed border color to match register page */}
       <div className="relative z-10 w-full max-w-4xl flex min-h-[600px] bg-gray-900/50 backdrop-blur-xl rounded-3xl border border-green-500/20 shadow-2xl overflow-hidden">
-        
         <div className="hidden lg:block lg:w-1/2 relative">
           <ImageSlideshow />
         </div>
-
         <div className="w-full lg:w-1/2 p-8 md:p-12 flex flex-col justify-center">
           <motion.div initial="hidden" animate="visible" variants={containerVariants} className="w-full">
             <motion.div variants={itemVariants} className="text-center mb-8">
-              {/* Changed icon color to match register page */}
               <div className="inline-block p-4 bg-green-500/10 rounded-full mb-4">
                 <Coffee className="w-10 h-10 text-green-400" />
               </div>
