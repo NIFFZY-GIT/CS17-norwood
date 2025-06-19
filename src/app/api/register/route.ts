@@ -1,54 +1,85 @@
-// src/app/api/register/route.ts
-import { NextResponse, NextRequest } from 'next/server';
+// app/api/register/route.ts
+import { NextResponse } from 'next/server';
 import clientPromise from '@/lib/mongodb';
 import bcrypt from 'bcryptjs';
 
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
   try {
-    // CHANGE #1: Only get username and password
-    const { username, password } = await req.json();
+    console.log('Register API called at:', new Date().toISOString());
 
-    // CHANGE #2: Update the validation
-    if (!username || !password) {
+    // Parse request body
+    let body;
+    try {
+      body = await req.json();
+      console.log('Request body:', body);
+    } catch (error) {
+      console.error('Body parsing error:', error);
+      return NextResponse.json({ message: 'Invalid request body' }, { status: 400 });
+    }
+
+    const { username, email, password } = body;
+
+    // Validate input
+    if (!username || !email || !password) {
+      console.log('Missing fields:', { username, email, password });
       return NextResponse.json(
-        { message: 'Missing username or password' },
+        { message: 'Missing username, email, or password' },
         { status: 400 }
       );
     }
-    
-    const client = await clientPromise;
-    const db = client.db(process.env.MONGODB_DB_NAME);
-    const usersCollection = db.collection('users');
 
-    // CHANGE #3: Only check for existing username
-    const existingUser = await usersCollection.findOne({ username });
+    // Connect to MongoDB
+    console.log('Connecting to MongoDB...');
+    const client = await clientPromise.catch((error) => {
+      throw new Error(`MongoDB connection failed: ${error.message}`);
+    });
+    console.log('Connected to MongoDB');
+
+    const db = client.db('norwooddb');
+    const users = db.collection('users');
+
+    // Check for existing user
+    console.log('Checking for existing user...');
+    const existingUser = await users.findOne({
+      $or: [{ username }, { email }],
+    });
+    console.log('Existing user check complete:', existingUser);
 
     if (existingUser) {
+      console.log('User already exists:', { username, email });
       return NextResponse.json(
-        { message: 'This username is already taken.' },
+        { message: 'Username or email already exists' },
         { status: 409 }
       );
     }
 
-    const passwordHash = await bcrypt.hash(password, 10);
+    // Hash password
+    console.log('Hashing password...');
+    const hashedPassword = await bcrypt.hash(password, 10);
+    console.log('Password hashed successfully');
 
-    // CHANGE #4: Don't save an email field
-    const result = await usersCollection.insertOne({
+    // Insert user
+    console.log('Inserting user...');
+    const result = await users.insertOne({
       username,
-      passwordHash,
+      email,
+      password: hashedPassword,
       createdAt: new Date(),
     });
+    console.log('User inserted with ID:', result.insertedId);
 
-    console.log(`New user created with ID: ${result.insertedId}`);
+    return NextResponse.json({
+      message: 'User registered successfully',
+      userId: result.insertedId,
+    });
+  } catch (error: any) {
+    console.error('Registration error:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name,
+    });
     return NextResponse.json(
-      { message: 'User created successfully', userId: result.insertedId },
-      { status: 201 }
-    );
-
-  } catch (error) {
-    console.error('Registration API error:', error);
-    return NextResponse.json(
-      { message: 'An internal server error occurred.' },
+      { message: `Server error: ${error.message || 'Unknown error'}` },
       { status: 500 }
     );
   }
