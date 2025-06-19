@@ -40,6 +40,7 @@ export async function POST(req: Request) {
     const newUser = {
       email: email.toLowerCase(),
       password: hashedPassword,
+        role: 'user',
       createdAt: new Date(),
     };
 

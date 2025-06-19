@@ -1,105 +1,84 @@
 // src/lib/session.ts
-'use server'; // Indicates this module is for server-side use, primarily Server Actions
+'use server';
 
-import 'server-only'; // Ensures this code only runs on the server, not in client bundles
+import 'server-only';
 
 import { SignJWT, jwtVerify, type JWTPayload } from 'jose';
 import { cookies } from 'next/headers';
 
 const secretKey = process.env.JWT_SECRET_KEY;
 if (!secretKey) {
-  throw new Error('JWT_SECRET_KEY is not set in environment variables. Please add it to your .env file.');
+  throw new Error('JWT_SECRET_KEY is not set in environment variables.');
 }
 const key = new TextEncoder().encode(secretKey);
 
-// Define the structure of your JWT payload extending jose's JWTPayload
+// ✅ Add 'role' to the payload
 interface AppJWTPayload extends JWTPayload {
   userId: string;
   username: string;
-  // Add any other custom claims you need
+  role: string; // <-- ADDED
 }
 
-// Define the structure of the session data you'll work with in your app
+// ✅ Add 'role' to the session data
 export interface SessionData {
   userId: string;
-  username: string;
-  expires?: Date; // Expiration date of the session/token
+  username:string;
+  role: string; // <-- ADDED
+  expires?: Date;
 }
 
-/**
- * Encrypts a payload into a JWT string.
- */
-export async function encrypt(payload: { userId: string; username: string }): Promise<string> {
-  return new SignJWT(payload as AppJWTPayload) // Cast to your custom payload type
+// ✅ Update 'encrypt' to accept 'role'
+export async function encrypt(payload: { userId: string; username: string; role: string }): Promise<string> {
+  return new SignJWT(payload as AppJWTPayload)
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
-    .setExpirationTime('1h') // Session duration (e.g., 1 hour)
+    .setExpirationTime('1h')
     .sign(key);
 }
 
-/**
- * Decrypts a session token string into session data.
- * Returns null if the token is invalid, expired, or not present.
- */
+// ✅ Update 'decrypt' to extract 'role'
+// In src/lib/session.ts
+
 export async function decrypt(sessionToken?: string): Promise<SessionData | null> {
-  if (!sessionToken) {
-    return null;
-  }
+  if (!sessionToken) return null;
   try {
-    // Provide AppJWTPayload as the generic type argument to jwtVerify
     const { payload } = await jwtVerify<AppJWTPayload>(sessionToken, key, {
       algorithms: ['HS256'],
     });
 
-    // Check if essential custom claims are present
-    if (!payload.userId || !payload.username) {
-      console.error('JWT payload is missing required custom fields (userId, username).');
+    if (!payload.userId || !payload.username || !payload.role) {
+      console.error('JWT payload is missing required custom fields.');
       return null;
     }
 
     return {
       userId: payload.userId,
       username: payload.username,
+      role: payload.role,
       expires: payload.exp ? new Date(payload.exp * 1000) : undefined,
     };
   } catch (error) {
-    // Log specific errors for debugging
-    if (error instanceof Error) {
-      if (error.name === 'JWTExpired' || error.message.includes('expired')) {
-        console.log('Session token expired.');
-      } else {
-        console.error('Failed to verify or decrypt session token:', error.name, error.message);
-      }
-    } else {
-      console.error('An unknown error occurred during token decryption:', error);
-    }
-    return null; // Return null on any decryption/verification failure
+    // ✅ USE the 'error' variable for logging
+    console.error('Failed to decrypt session token:', error);
+    return null;
   }
 }
 
-/**
- * Creates a session cookie containing the encrypted JWT.
- * Intended for use in Server Actions or Route Handlers.
- */
-export async function createSessionCookie(userId: string, username: string) {
-  const cookieExpiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour from now
-  const sessionToken = await encrypt({ userId, username });
+// ✅ Update 'createSessionCookie' to accept 'role'
+export async function createSessionCookie(userId: string, username: string, role: string) {
+  const cookieExpiresAt = new Date(Date.now() + 60 * 60 * 1000);
+  const sessionToken = await encrypt({ userId, username, role }); // <-- Pass role here
 
-  const cookieStore = await cookies(); // Correctly awaiting cookies()
+  const cookieStore = await cookies();
   cookieStore.set('session', sessionToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     expires: cookieExpiresAt,
-    sameSite: 'lax', // Or 'strict' if appropriate
+    sameSite: 'lax',
     path: '/',
   });
-  console.log('Session cookie created.');
+  console.log(`Session cookie created for user: ${username} with role: ${role}`);
 }
-
-/**
- * Retrieves the current session data from the session cookie.
- * Intended for use in Server Actions, Route Handlers, or RSCs.
- */
 export async function getSession(): Promise<SessionData | null> {
   const cookieStore = await cookies(); // Correctly awaiting cookies()
   const sessionCookieValue = cookieStore.get('session')?.value;
