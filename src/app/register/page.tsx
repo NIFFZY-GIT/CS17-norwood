@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, Variants } from 'framer-motion';
-import { Mail, Lock, User, Coffee } from 'lucide-react';
+// MODIFIED: Removed 'User' icon, kept Mail, Lock, Coffee
+import { Mail, Lock, Coffee } from 'lucide-react';
 import Image from 'next/image';
 
 // --- Motion Variants ---
@@ -22,11 +23,7 @@ const itemVariants: Variants = {
 
 // --- Slideshow Left Side Component ---
 const ImageSlideshow = () => {
-  const images = [
-    '/snackk.jpg',
-    '/sweet1.jpg',
-    '/ssnack.jpg',
-  ];
+  const images = ['/bite1.png', '/bathalabite.png', '/logo.png'];
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   useEffect(() => {
@@ -59,7 +56,8 @@ const ImageSlideshow = () => {
 // --- Main Register Page ---
 export default function RegisterPage() {
   const router = useRouter();
-  const [form, setForm] = useState({ username: '', email: '', password: '', confirmPassword: '' });
+  // MODIFIED: Removed 'username' from the form state
+  const [form, setForm] = useState({ email: '', password: '', confirmPassword: '' });
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
@@ -84,13 +82,11 @@ export default function RegisterPage() {
     }
 
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500)); // Simulated delay
-      // Replace with your actual API logic
       const res = await fetch('/api/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        // MODIFIED: Removed 'username' from the request body
         body: JSON.stringify({
-          username: form.username,
           email: form.email,
           password: form.password,
         }),
@@ -111,22 +107,13 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center p-4 bg-gray-900 text-white overflow-hidden">
-      {/* Spotlight Background */}
-      <div
-        className="pointer-events-none fixed inset-0 z-0 transition duration-300"
-        style={{
-          background: `radial-gradient(600px at ${mousePosition.x}px ${mousePosition.y}px, rgba(34, 197, 94, 0.2), transparent 80%)`,
-        }}
-      />
+      <div className="pointer-events-none fixed inset-0 z-0 transition duration-300" style={{ background: `radial-gradient(600px at ${mousePosition.x}px ${mousePosition.y}px, rgba(34, 197, 94, 0.2), transparent 80%)` }} />
 
       <div className="relative z-10 w-full max-w-4xl flex min-h-[640px] bg-gray-900/50 backdrop-blur-xl rounded-3xl border border-green-500/20 shadow-2xl overflow-hidden">
-        
-        {/* Left: Image Slideshow */}
         <div className="hidden lg:block lg:w-1/2 relative">
           <ImageSlideshow />
         </div>
 
-        {/* Right: Registration Form */}
         <div className="w-full lg:w-1/2 p-8 md:p-12 flex flex-col justify-center">
           <motion.div initial="hidden" animate="visible" variants={containerVariants} className="w-full">
             <motion.div variants={itemVariants} className="text-center mb-8">
@@ -134,87 +121,32 @@ export default function RegisterPage() {
                 <Coffee className="w-10 h-10 text-green-400" />
               </div>
               <h1 className="text-4xl font-bold text-gray-100 tracking-tight">Join Norwood</h1>
-              <p className="text-gray-400 mt-2">Create an account and steep into goodness.</p>
+              <p className="text-gray-400 mt-2">Create an account to get started.</p>
             </motion.div>
 
-            {error && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mb-4 text-sm text-center text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg py-2"
-              >
-                {error}
-              </motion.div>
-            )}
+            {error && <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-4 text-sm text-center text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg py-2">{error}</motion.div>}
 
             <motion.form onSubmit={handleRegister} variants={containerVariants} className="space-y-5">
-              {/* Username */}
-              <motion.div variants={itemVariants} className="relative">
-                <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Username"
-                  className="w-full pl-12 pr-4 py-3 bg-gray-800/60 rounded-lg border border-gray-700 focus:border-green-500 focus:ring-2 focus:ring-green-500/50 transition-all duration-300 outline-none"
-                  value={form.username}
-                  onChange={(e) => setForm({ ...form, username: e.target.value })}
-                  disabled={isLoading}
-                  required
-                />
-              </motion.div>
-
-              {/* Email */}
+              
+              {/* REMOVED: The entire username input field has been deleted from here. */}
+            
               <motion.div variants={itemVariants} className="relative">
                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type="email"
-                  placeholder="Email Address"
-                  className="w-full pl-12 pr-4 py-3 bg-gray-800/60 rounded-lg border border-gray-700 focus:border-green-500 focus:ring-2 focus:ring-green-500/50 transition-all duration-300 outline-none"
-                  value={form.email}
-                  onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  disabled={isLoading}
-                  required
-                />
+                <input type="email" placeholder="Email Address" className="w-full pl-12 pr-4 py-3 bg-gray-800/60 rounded-lg border border-gray-700 focus:border-green-500 focus:ring-2 focus:ring-green-500/50 transition-all duration-300 outline-none" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} disabled={isLoading} required />
               </motion.div>
 
-              {/* Password */}
               <motion.div variants={itemVariants} className="relative">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type="password"
-                  placeholder="Password"
-                  className="w-full pl-12 pr-4 py-3 bg-gray-800/60 rounded-lg border border-gray-700 focus:border-green-500 focus:ring-2 focus:ring-green-500/50 transition-all duration-300 outline-none"
-                  value={form.password}
-                  onChange={(e) => setForm({ ...form, password: e.target.value })}
-                  disabled={isLoading}
-                  required
-                />
+                <input type="password" placeholder="Password (min. 8 characters)" className="w-full pl-12 pr-4 py-3 bg-gray-800/60 rounded-lg border border-gray-700 focus:border-green-500 focus:ring-2 focus:ring-green-500/50 transition-all duration-300 outline-none" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} disabled={isLoading} required minLength={8} />
               </motion.div>
 
-              {/* Confirm Password */}
               <motion.div variants={itemVariants} className="relative">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type="password"
-                  placeholder="Confirm Password"
-                  className="w-full pl-12 pr-4 py-3 bg-gray-800/60 rounded-lg border border-gray-700 focus:border-green-500 focus:ring-2 focus:ring-green-500/50 transition-all duration-300 outline-none"
-                  value={form.confirmPassword}
-                  onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })}
-                  disabled={isLoading}
-                  required
-                />
+                <input type="password" placeholder="Confirm Password" className="w-full pl-12 pr-4 py-3 bg-gray-800/60 rounded-lg border border-gray-700 focus:border-green-500 focus:ring-2 focus:ring-green-500/50 transition-all duration-300 outline-none" value={form.confirmPassword} onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })} disabled={isLoading} required />
               </motion.div>
 
-              {/* Submit Button */}
               <motion.div variants={itemVariants}>
-                <button
-                  type="submit"
-                  className={`w-full font-semibold py-3 rounded-lg transition-all duration-300 ease-in-out ${
-                    isLoading
-                      ? 'bg-gray-600 cursor-not-allowed'
-                      : 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 shadow-lg shadow-green-500/20 hover:shadow-emerald-500/40'
-                  }`}
-                  disabled={isLoading}
-                >
+                <button type="submit" className={`w-full font-semibold py-3 rounded-lg transition-all duration-300 ease-in-out ${isLoading ? 'bg-gray-600 cursor-not-allowed' : 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 shadow-lg shadow-green-500/20 hover:shadow-emerald-500/40'}`} disabled={isLoading}>
                   {isLoading ? 'Registering...' : 'Create Account'}
                 </button>
               </motion.div>
@@ -222,9 +154,7 @@ export default function RegisterPage() {
 
             <motion.p variants={itemVariants} className="mt-8 text-sm text-center text-gray-400">
               Already have an account?{' '}
-              <a href="/login" className="font-semibold text-green-400 hover:text-green-300 hover:underline underline-offset-2">
-                Log In
-              </a>
+              <a href="/login" className="font-semibold text-green-400 hover:text-green-300 hover:underline underline-offset-2">Log In</a>
             </motion.p>
           </motion.div>
         </div>
