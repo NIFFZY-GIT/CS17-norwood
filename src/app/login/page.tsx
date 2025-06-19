@@ -1,10 +1,8 @@
 // src/app/login/page.tsx
 'use client';
 
-import { useState, useEffect, Suspense } from 'react'; // Import Suspense
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-
-// ... (rest of your imports like icons, if any)
 
 // This new component contains the actual form and logic using useSearchParams
 function LoginFormContent() {
@@ -39,8 +37,14 @@ function LoginFormContent() {
       });
 
       if (res.ok) {
-        // const data = await res.json(); // If your API returns data like user info
-        router.push(redirectTo); // Redirect to the intended page or dashboard
+        // ✅ THE FIX IS HERE
+        // 1. Refresh the router. This updates the client-side cache and
+        //    makes the new session cookie available for the next navigation.
+        router.refresh();
+
+        // 2. NOW push to the new route. The router is aware you are logged in.
+        router.push(redirectTo);
+        
       } else {
         const errorData = await res.json();
         setError(errorData.message || 'Invalid username or password. Please try again.');
@@ -108,14 +112,6 @@ function LoginFormContent() {
           required
           disabled={isLoading}
         />
-        {/* <div className="text-right mt-2">
-          <a
-            href="#" // Consider making this a real link or button
-            className="text-sm text-sky-500 hover:underline dark:text-sky-400"
-          >
-            Forgot Password?
-          </a>
-        </div> */}
       </div>
 
       <button
@@ -127,7 +123,6 @@ function LoginFormContent() {
       >
         {isLoading ? (
           <span className="flex items-center justify-center">
-            {/* You might want to add a spinner icon here */}
             Logging In...
           </span>
         ) : (
@@ -135,15 +130,6 @@ function LoginFormContent() {
         )}
       </button>
 
-      {/* <p className="text-sm text-center text-slate-600 dark:text-slate-400">
-        Don&apos;t have an account?{' '}
-        <a
-          href="/register" // Use Next.js Link component for internal navigation if preferred
-          className="font-medium text-sky-500 hover:underline dark:text-sky-400"
-        >
-          Sign up
-        </a>
-      </p> */}
     </form>
   );
 }
