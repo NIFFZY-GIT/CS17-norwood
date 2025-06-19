@@ -1,18 +1,76 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { motion, Variants } from 'framer-motion';
+import { Mail, Lock, User, Coffee } from 'lucide-react';
+import Image from 'next/image';
 
+// --- Motion Variants ---
+const containerVariants: Variants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1, delayChildren: 0.2 },
+  },
+};
+
+const itemVariants: Variants = {
+  hidden: { y: 20, opacity: 0 },
+  visible: { y: 0, opacity: 1, transition: { type: 'spring', stiffness: 100 } },
+};
+
+// --- Slideshow Left Side Component ---
+const ImageSlideshow = () => {
+  const images = [
+    '/snackk.jpg',
+    '/sweet1.jpg',
+    '/ssnack.jpg',
+  ];
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      setCurrentImageIndex((prevIndex) => (prevIndex + 1) % images.length);
+    }, 5000);
+    return () => clearInterval(intervalId);
+  }, [images.length]);
+
+  return (
+    <div className="relative w-full h-full">
+      {images.map((src, index) => (
+        <Image
+          key={src}
+          src={src}
+          alt="Rotating Image"
+          fill
+          className={`object-cover transition-opacity duration-1000 ease-in-out ${
+            index === currentImageIndex ? 'opacity-100' : 'opacity-0'
+          }`}
+          priority={index === 0}
+          sizes="(max-width: 1024px) 0vw, 50vw"
+        />
+      ))}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent" />
+    </div>
+  );
+};
+
+// --- Main Register Page ---
 export default function RegisterPage() {
   const router = useRouter();
-  const [form, setForm] = useState({
-    username: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-  });
+  const [form, setForm] = useState({ username: '', email: '', password: '', confirmPassword: '' });
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+
+  useEffect(() => {
+    const handleMouseMove = (event: MouseEvent) => {
+      setMousePosition({ x: event.clientX, y: event.clientY });
+    };
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, []);
 
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault();
@@ -26,6 +84,8 @@ export default function RegisterPage() {
     }
 
     try {
+      await new Promise(resolve => setTimeout(resolve, 1500)); // Simulated delay
+      // Replace with your actual API logic
       const res = await fetch('/api/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -39,140 +99,135 @@ export default function RegisterPage() {
       if (res.ok) {
         router.push('/login?registered=true');
       } else {
-        const errorData = await res.json().catch(() => ({ message: 'Registration failed.' }));
-        setError(errorData.message || 'Something went wrong.');
+        const data = await res.json().catch(() => ({ message: 'Registration failed.' }));
+        setError(data.message || 'Something went wrong.');
       }
     } catch {
-      setError('Unexpected error. Try again later.');
+      setError('Unexpected error. Try again.');
     } finally {
       setIsLoading(false);
     }
   }
 
   return (
-   <div className="min-h-screen flex items-center justify-center px-4 bg-gradient-to-br from-[#1e392a] via-[#2f5c45] to-[#4c8c6b]">
+    <div className="min-h-screen w-full flex items-center justify-center p-4 bg-gray-900 text-white overflow-hidden">
+      {/* Spotlight Background */}
+      <div
+        className="pointer-events-none fixed inset-0 z-0 transition duration-300"
+        style={{
+          background: `radial-gradient(600px at ${mousePosition.x}px ${mousePosition.y}px, rgba(34, 197, 94, 0.2), transparent 80%)`,
+        }}
+      />
 
-
-
-   <div className="relative w-full max-w-md bg-green-900/50 backdrop-blur-lg border border-green-700/40 rounded-3xl p-10 md:p-12 shadow-2xl shadow-green-900/30 transition duration-300 hover:scale-[1.01]">
-
-
-
-
-
-
-        <div className="absolute -top-16 left-1/2 transform -translate-x-1/2 w-28 h-28 bg-green-900 rounded-full shadow-lg overflow-hidden border-4 border-green-300 flex items-center justify-center">
-          <img
-            src="/tea.png"
-            alt="Tea Avatar"
-            className="w-20 h-20 object-contain"
-          />
+      <div className="relative z-10 w-full max-w-4xl flex min-h-[640px] bg-gray-900/50 backdrop-blur-xl rounded-3xl border border-green-500/20 shadow-2xl overflow-hidden">
+        
+        {/* Left: Image Slideshow */}
+        <div className="hidden lg:block lg:w-1/2 relative">
+          <ImageSlideshow />
         </div>
 
-        <h1 className="text-center text-3xl font-bold text-green-300 mb-6 font-serif tracking-wide">
-          Create Account
-        </h1>
+        {/* Right: Registration Form */}
+        <div className="w-full lg:w-1/2 p-8 md:p-12 flex flex-col justify-center">
+          <motion.div initial="hidden" animate="visible" variants={containerVariants} className="w-full">
+            <motion.div variants={itemVariants} className="text-center mb-8">
+              <div className="inline-block p-4 bg-green-500/10 rounded-full mb-4">
+                <Coffee className="w-10 h-10 text-green-400" />
+              </div>
+              <h1 className="text-4xl font-bold text-gray-100 tracking-tight">Join Norwood</h1>
+              <p className="text-gray-400 mt-2">Create an account and steep into goodness.</p>
+            </motion.div>
 
-        {error && (
-          <div className="mb-4 text-sm text-red-600 bg-red-200 rounded-md px-4 py-2">
-            <strong>Error:</strong> {error}
-          </div>
-        )}
+            {error && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mb-4 text-sm text-center text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg py-2"
+              >
+                {error}
+              </motion.div>
+            )}
 
-        <form onSubmit={handleRegister} className="space-y-6">
-          {/* Username */}
-          <div>
-            <label htmlFor="username" className="block text-sm font-medium text-green-300">
-              Username
-            </label>
-            <input
-              id="username"
-              type="text"
-              placeholder="tea.lover123"
-              className="mt-1 w-full rounded-lg border border-green-600 bg-green-900 bg-opacity-30 px-4 py-2 text-green-200 placeholder-green-400 focus:ring-4 focus:ring-green-500 focus:border-green-400 focus:bg-green-800 focus:text-green-100 transition duration-300 outline-none"
-              value={form.username}
-              onChange={(e) => setForm({ ...form, username: e.target.value })}
-              disabled={isLoading}
-              required
-              autoComplete="username"
-            />
-          </div>
+            <motion.form onSubmit={handleRegister} variants={containerVariants} className="space-y-5">
+              {/* Username */}
+              <motion.div variants={itemVariants} className="relative">
+                <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Username"
+                  className="w-full pl-12 pr-4 py-3 bg-gray-800/60 rounded-lg border border-gray-700 focus:border-green-500 focus:ring-2 focus:ring-green-500/50 transition-all duration-300 outline-none"
+                  value={form.username}
+                  onChange={(e) => setForm({ ...form, username: e.target.value })}
+                  disabled={isLoading}
+                  required
+                />
+              </motion.div>
 
-          {/* Email */}
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-green-300">
-              Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              placeholder="you@example.com"
-              className="mt-1 w-full rounded-lg border border-green-600 bg-green-900 bg-opacity-30 px-4 py-2 text-green-200 placeholder-green-400 focus:ring-4 focus:ring-green-500 focus:border-green-400 focus:bg-green-800 focus:text-green-100 transition duration-300 outline-none"
-              value={form.email}
-              onChange={(e) => setForm({ ...form, email: e.target.value })}
-              disabled={isLoading}
-              required
-              autoComplete="email"
-            />
-          </div>
+              {/* Email */}
+              <motion.div variants={itemVariants} className="relative">
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
+                  type="email"
+                  placeholder="Email Address"
+                  className="w-full pl-12 pr-4 py-3 bg-gray-800/60 rounded-lg border border-gray-700 focus:border-green-500 focus:ring-2 focus:ring-green-500/50 transition-all duration-300 outline-none"
+                  value={form.email}
+                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  disabled={isLoading}
+                  required
+                />
+              </motion.div>
 
-          {/* Password */}
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-green-300">
-              Password
-            </label>
-            <input
-              id="password"
-              type="password"
-              placeholder="••••••••"
-              className="mt-1 w-full rounded-lg border border-green-600 bg-green-900 bg-opacity-30 px-4 py-2 text-green-200 placeholder-green-400 focus:ring-4 focus:ring-green-500 focus:border-green-400 focus:bg-green-800 focus:text-green-100 transition duration-300 outline-none"
-              value={form.password}
-              onChange={(e) => setForm({ ...form, password: e.target.value })}
-              disabled={isLoading}
-              required
-              minLength={8}
-              autoComplete="new-password"
-            />
-          </div>
+              {/* Password */}
+              <motion.div variants={itemVariants} className="relative">
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
+                  type="password"
+                  placeholder="Password"
+                  className="w-full pl-12 pr-4 py-3 bg-gray-800/60 rounded-lg border border-gray-700 focus:border-green-500 focus:ring-2 focus:ring-green-500/50 transition-all duration-300 outline-none"
+                  value={form.password}
+                  onChange={(e) => setForm({ ...form, password: e.target.value })}
+                  disabled={isLoading}
+                  required
+                />
+              </motion.div>
 
-          {/* Confirm Password */}
-          <div>
-            <label htmlFor="confirmPassword" className="block text-sm font-medium text-green-300">
-              Confirm Password
-            </label>
-            <input
-              id="confirmPassword"
-              type="password"
-              placeholder="Re-enter password"
-              className="mt-1 w-full rounded-lg border border-green-600 bg-green-900 bg-opacity-30 px-4 py-2 text-green-200 placeholder-green-400 focus:ring-4 focus:ring-green-500 focus:border-green-400 focus:bg-green-800 focus:text-green-100 transition duration-300 outline-none"
-              value={form.confirmPassword}
-              onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })}
-              disabled={isLoading}
-              required
-              autoComplete="new-password"
-            />
-          </div>
+              {/* Confirm Password */}
+              <motion.div variants={itemVariants} className="relative">
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
+                  type="password"
+                  placeholder="Confirm Password"
+                  className="w-full pl-12 pr-4 py-3 bg-gray-800/60 rounded-lg border border-gray-700 focus:border-green-500 focus:ring-2 focus:ring-green-500/50 transition-all duration-300 outline-none"
+                  value={form.confirmPassword}
+                  onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })}
+                  disabled={isLoading}
+                  required
+                />
+              </motion.div>
 
-          <button
-            type="submit"
-            className={`w-full bg-gradient-to-r from-green-700 to-green-800 hover:from-green-800 hover:to-green-900 text-white font-semibold py-3 rounded-xl transition duration-300 shadow-lg ${
-              isLoading ? 'opacity-60 cursor-not-allowed' : 'shadow-green-700/50'
-            }`}
-            disabled={isLoading}
-          >
-            {isLoading ? 'Registering...' : 'Register'}
-          </button>
-        </form>
+              {/* Submit Button */}
+              <motion.div variants={itemVariants}>
+                <button
+                  type="submit"
+                  className={`w-full font-semibold py-3 rounded-lg transition-all duration-300 ease-in-out ${
+                    isLoading
+                      ? 'bg-gray-600 cursor-not-allowed'
+                      : 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 shadow-lg shadow-green-500/20 hover:shadow-emerald-500/40'
+                  }`}
+                  disabled={isLoading}
+                >
+                  {isLoading ? 'Registering...' : 'Create Account'}
+                </button>
+              </motion.div>
+            </motion.form>
 
-        <p className="mt-8 text-sm text-center text-green-400">
-          Already have an account?{' '}
-          <a
-            href="/login"
-            className="font-semibold text-green-300 hover:text-green-100 hover:underline transition duration-300"
-          >
-            Log In
-          </a>
-        </p>
+            <motion.p variants={itemVariants} className="mt-8 text-sm text-center text-gray-400">
+              Already have an account?{' '}
+              <a href="/login" className="font-semibold text-green-400 hover:text-green-300 hover:underline underline-offset-2">
+                Log In
+              </a>
+            </motion.p>
+          </motion.div>
+        </div>
       </div>
     </div>
   );
