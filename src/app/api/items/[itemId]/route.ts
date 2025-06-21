@@ -4,7 +4,6 @@ import { getSession } from '@/lib/session';
 import { Item } from '@/lib/types';
 import { ObjectId } from 'mongodb'; 
 
-// This helper type correctly represents the document in MongoDB.
 interface ItemFromDB extends Omit<Item, '_id'> {
   _id: ObjectId;
 }
@@ -12,9 +11,11 @@ interface ItemFromDB extends Omit<Item, '_id'> {
 // --- GET: Retrieves a single item ---
 export async function GET(
   request: NextRequest,
-  { params }: { params: { itemId: string } }
+  // CHANGED: Corrected function signature
+  context: { params: { itemId: string } } 
 ) {
-  const { itemId } = params;
+  // CHANGED: Destructure from context.params
+  const { itemId } = context.params;
 
   if (!ObjectId.isValid(itemId)) {
     return NextResponse.json({ message: 'Invalid item ID format' }, { status: 400 });
@@ -24,21 +25,17 @@ export async function GET(
     const client = await clientPromise;
     const db = client.db(process.env.MONGODB_DB_NAME!);
     
-    // Find the single item in the database
     const item = await db.collection<ItemFromDB>('items').findOne({ _id: new ObjectId(itemId) });
 
-    // If no item is found, return a 404
     if (!item) {
       return NextResponse.json({ message: 'Item not found' }, { status: 404 });
     }
 
-    // --- CHANGED: Type-safe object creation ---
-    // This avoids using `as unknown as Item` for better type safety.
     const { _id, ...restOfItem } = item;
     const responseItem: Item = {
       ...restOfItem,
       _id: _id.toString(),
-      originalPrice: restOfItem.originalPrice ?? undefined, // Use nullish coalescing for safety
+      originalPrice: restOfItem.originalPrice ?? undefined,
       category: restOfItem.category ?? 'Uncategorized',
     };
 
@@ -50,10 +47,14 @@ export async function GET(
   }
 }
 
-
 // --- PUT: Updates an existing item ---
-export async function PUT(request: NextRequest, { params }: { params: { itemId: string } }) {
-  const { itemId } = params;
+export async function PUT(
+  request: NextRequest, 
+  // CHANGED: Corrected function signature
+  context: { params: { itemId: string } }
+) {
+  // CHANGED: Destructure from context.params
+  const { itemId } = context.params;
   const session = await getSession();
   if (!session?.userId) return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   if (!ObjectId.isValid(itemId)) return NextResponse.json({ message: 'Invalid item ID' }, { status: 400 });
@@ -73,7 +74,6 @@ export async function PUT(request: NextRequest, { params }: { params: { itemId: 
         return NextResponse.json({ message: 'Item not found' }, { status: 404 });
     }
 
-    // Determine the final prices for validation
     const priceForValidation = body.price ?? existingItem.price;
     const originalPriceForValidation = body.originalPrice ?? existingItem.originalPrice;
 
@@ -91,7 +91,6 @@ export async function PUT(request: NextRequest, { params }: { params: { itemId: 
       return NextResponse.json({ message: 'Item not found during update' }, { status: 404 });
     }
     
-    // --- CHANGED: Type-safe object creation ---
     const { _id, ...restOfUpdatedDoc } = updateResult;
     const responseItem: Item = {
       ...restOfUpdatedDoc,
@@ -108,12 +107,13 @@ export async function PUT(request: NextRequest, { params }: { params: { itemId: 
 }
 
 // --- DELETE: Removes an item ---
-// This function was already well-written and required no changes.
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { itemId:string } }
+  // CHANGED: Corrected function signature
+  context: { params: { itemId: string } }
 ) {
-  const { itemId } = params;
+  // CHANGED: Destructure from context.params
+  const { itemId } = context.params;
   const session = await getSession();
   if (!session?.userId) return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   if (!ObjectId.isValid(itemId)) return NextResponse.json({ message: 'Invalid item ID format' }, { status: 400 });
