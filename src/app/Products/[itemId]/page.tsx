@@ -112,7 +112,7 @@ export default function ProductDetailsPage() {
         
         <main className="relative z-10 p-4 sm:p-8 lg:p-12">
             <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.2 }}>
-                <Link href="/products" className="inline-flex items-center gap-2 text-slate-300 hover:text-white transition-colors bg-slate-800/50 ring-1 ring-slate-700 py-2 px-4 rounded-lg">
+                <Link href="/Products" className="inline-flex items-center gap-2 text-slate-300 hover:text-white transition-colors bg-slate-800/50 ring-1 ring-slate-700 py-2 px-4 rounded-lg">
                     <ArrowLeft size={18} /> Back to All Products
                 </Link>
             </motion.div>
