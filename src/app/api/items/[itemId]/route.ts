@@ -1,4 +1,3 @@
-// src/app/api/items/[itemId]/route.ts
 import { NextResponse, NextRequest } from 'next/server';
 import clientPromise from '@/lib/mongodb';
 import { getSession } from '@/lib/session';
@@ -10,7 +9,7 @@ interface ItemFromDB extends Omit<Item, '_id'> {
   _id: ObjectId;
 }
 
-// This is the function that your details page calls
+// --- GET: Retrieves a single item ---
 export async function GET(
   request: NextRequest,
   { params }: { params: { itemId: string } }
@@ -26,20 +25,22 @@ export async function GET(
     const db = client.db(process.env.MONGODB_DB_NAME!);
     
     // Find the single item in the database
-    const item = await db.collection('items').findOne({ _id: new ObjectId(itemId) });
+    const item = await db.collection<ItemFromDB>('items').findOne({ _id: new ObjectId(itemId) });
 
     // If no item is found, return a 404
     if (!item) {
       return NextResponse.json({ message: 'Item not found' }, { status: 404 });
     }
 
-    // Convert the database document to the API 'Item' type
+    // --- CHANGED: Type-safe object creation ---
+    // This avoids using `as unknown as Item` for better type safety.
+    const { _id, ...restOfItem } = item;
     const responseItem: Item = {
-      ...item,
-      _id: item._id.toString(),
-      originalPrice: item.originalPrice || undefined,
-      category: item.category || 'Uncategorized',
-    } as unknown as Item;
+      ...restOfItem,
+      _id: _id.toString(),
+      originalPrice: restOfItem.originalPrice ?? undefined, // Use nullish coalescing for safety
+      category: restOfItem.category ?? 'Uncategorized',
+    };
 
     return NextResponse.json(responseItem, { status: 200 });
 
@@ -72,10 +73,11 @@ export async function PUT(request: NextRequest, { params }: { params: { itemId: 
         return NextResponse.json({ message: 'Item not found' }, { status: 404 });
     }
 
-    const finalPrice = body.price !== undefined ? body.price : existingItem.price;
-    const finalOriginalPrice = body.originalPrice !== undefined ? body.originalPrice : existingItem.originalPrice;
+    // Determine the final prices for validation
+    const priceForValidation = body.price ?? existingItem.price;
+    const originalPriceForValidation = body.originalPrice ?? existingItem.originalPrice;
 
-    if (finalOriginalPrice !== undefined && finalPrice >= finalOriginalPrice) {
+    if (originalPriceForValidation !== undefined && priceForValidation >= originalPriceForValidation) {
         return NextResponse.json({ message: 'Original price must be greater than the current price.' }, { status: 400 });
     }
     
@@ -85,20 +87,20 @@ export async function PUT(request: NextRequest, { params }: { params: { itemId: 
       { returnDocument: 'after' }
     );
     
-    const updatedDoc = updateResult;
-
-    if (!updatedDoc) {
+    if (!updateResult) {
       return NextResponse.json({ message: 'Item not found during update' }, { status: 404 });
     }
     
-    const respItem: Item = {
-      ...updatedDoc,
-      _id: updatedDoc._id.toString(),
-      originalPrice: updatedDoc.originalPrice || undefined,
-      category: updatedDoc.category || 'Uncategorized',
+    // --- CHANGED: Type-safe object creation ---
+    const { _id, ...restOfUpdatedDoc } = updateResult;
+    const responseItem: Item = {
+      ...restOfUpdatedDoc,
+      _id: _id.toString(),
+      originalPrice: restOfUpdatedDoc.originalPrice ?? undefined,
+      category: restOfUpdatedDoc.category ?? 'Uncategorized',
     };
 
-    return NextResponse.json(respItem, { status: 200 });
+    return NextResponse.json(responseItem, { status: 200 });
   } catch (error) {
     console.error(`PUT /api/items/${itemId}:`, error);
     return NextResponse.json({ message: 'An unknown server error occurred' }, { status: 500 });
@@ -106,6 +108,7 @@ export async function PUT(request: NextRequest, { params }: { params: { itemId: 
 }
 
 // --- DELETE: Removes an item ---
+// This function was already well-written and required no changes.
 export async function DELETE(
   request: NextRequest,
   { params }: { params: { itemId:string } }
