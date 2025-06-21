@@ -1,36 +1,60 @@
 // src/lib/types.ts
+
+// =================================================================
+// E-COMMERCE & APPLICATION CORE TYPES
+// =================================================================
+
+/**
+ * Represents a product/item in your store.
+ * This interface combines backend fields (_id, userId) with frontend
+ * e-commerce requirements (price, inStock, rating).
+ */
 export interface Item {
-  _id: string; // Always a string after fetching/creation
+  // --- Core Database Fields ---
+  _id: string;
   name: string;
   description: string;
-  itemCode: string;
-  imageBase64: string; // Assumed mandatory for an item
-  userId: string;
-  createdAt: Date; // Will be a Date object
-  
+  imageBase64: string;
+  itemCode?: string; // Optional, as not all items might have a public code
+  userId: string; // ID of the user/admin who created the item
+  createdAt: Date;
+
+  // --- E-commerce Fields (for the product card & logic) ---
+  price: number;
+  currency: 'LKR' | 'USD' | 'EUR' | 'GBP'; // Extend this union type with more currencies as needed
+  inStock: boolean;
+  originalPrice?: number; // Optional: Used to show a 'sale' price next to a strikethrough price
+     // Optional: A number from 0 to 5 for star ratings
 }
 
+/**
+ * Represents the session data for a logged-in user.
+ */
 export interface UserSession {
   userId: string;
   username: string;
-  // any other session fields
+  isAdmin?: boolean; // Good to have for role-based access
 }
 
+/**
+ * Represents a user document from the database.
+ */
 export interface User {
-  _id: string; // from MongoDB
-  username: string;
-  email?: string; // Assuming email is stored
+  _id: string;
+  username:string;
+  email?: string;
   createdAt: Date;
-  // Do NOT store passwords directly here for listing.
-  // Add role or isAdmin if you store it on the user document
   isAdmin?: boolean;
 }
 
-// This is the structure we'll send to the frontend.
-// Keep your existing types (Item, UserSession, User)
 
-// Add these new types for the careers feature
+// =================================================================
+// CAREERS & RECRUITMENT TYPES
+// =================================================================
 
+/**
+ * Represents a job vacancy posted on the careers page.
+ */
 export interface Vacancy {
   _id: string;
   title: string;
@@ -42,6 +66,9 @@ export interface Vacancy {
   createdAt: Date;
 }
 
+/**
+ * Represents a job application submitted by a candidate.
+ */
 export interface Application {
   _id: string;
   vacancyId: string;
