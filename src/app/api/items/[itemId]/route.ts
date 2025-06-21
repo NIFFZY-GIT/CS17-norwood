@@ -1,4 +1,7 @@
+// Forcing a git update - [Your Initials]
+
 import { NextResponse, NextRequest } from 'next/server';
+// ... the rest of your correct code
 import clientPromise from '@/lib/mongodb';
 import { getSession } from '@/lib/session';
 import { Item } from '@/lib/types';
