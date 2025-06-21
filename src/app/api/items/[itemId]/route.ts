@@ -1,7 +1,4 @@
-// Forcing a git update - [Your Initials]
-
-import { NextResponse, NextRequest } from 'next/server';
-// ... the rest of your correct code
+import { NextResponse } from 'next/server'; // Removed unused NextRequest
 import clientPromise from '@/lib/mongodb';
 import { getSession } from '@/lib/session';
 import { Item } from '@/lib/types';
@@ -13,11 +10,10 @@ interface ItemFromDB extends Omit<Item, '_id'> {
 
 // --- GET: Retrieves a single item ---
 export async function GET(
-  request: NextRequest,
-  // CHANGED: Corrected function signature
+  // CHANGED: Using the standard web 'Request' type
+  request: Request,
   context: { params: { itemId: string } } 
 ) {
-  // CHANGED: Destructure from context.params
   const { itemId } = context.params;
 
   if (!ObjectId.isValid(itemId)) {
@@ -52,11 +48,10 @@ export async function GET(
 
 // --- PUT: Updates an existing item ---
 export async function PUT(
-  request: NextRequest, 
-  // CHANGED: Corrected function signature
+  // CHANGED: Using the standard web 'Request' type
+  request: Request, 
   context: { params: { itemId: string } }
 ) {
-  // CHANGED: Destructure from context.params
   const { itemId } = context.params;
   const session = await getSession();
   if (!session?.userId) return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
@@ -111,11 +106,10 @@ export async function PUT(
 
 // --- DELETE: Removes an item ---
 export async function DELETE(
-  request: NextRequest,
-  // CHANGED: Corrected function signature
+  // CHANGED: Using the standard web 'Request' type
+  request: Request,
   context: { params: { itemId: string } }
 ) {
-  // CHANGED: Destructure from context.params
   const { itemId } = context.params;
   const session = await getSession();
   if (!session?.userId) return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
