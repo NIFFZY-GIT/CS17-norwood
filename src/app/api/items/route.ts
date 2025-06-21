@@ -5,8 +5,6 @@ import { getSession } from '@/lib/session';
 import { Item } from '@/lib/types';
 import { ObjectId } from 'mongodb';
 
-// FIX 1: Define a type that matches the MongoDB document structure.
-// This is the key to removing 'any'.
 interface ItemFromDB extends Omit<Item, '_id'> {
   _id: ObjectId;
 }
@@ -20,19 +18,20 @@ export async function GET() {
   try {
     const client = await clientPromise;
     const db = client.db(process.env.MONGODB_DB_NAME);
-    // FIX 2: Strongly type the collection.
     const itemsCollection = db.collection<ItemFromDB>('items');
 
     const dbItems = await itemsCollection.find({}).sort({ createdAt: -1 }).toArray();
 
-    // FIX 3: TypeScript now knows 'dbItem' is of type 'ItemFromDB', so 'any' is no longer needed.
     const items: Item[] = dbItems.map((dbItem) => ({
       ...dbItem,
       _id: dbItem._id.toString(),
       price: dbItem.price ?? 0,
-      currency: dbItem.currency ?? 'USD',
+      currency: dbItem.currency ?? 'LKR', // Defaulting to LKR as per your modal
       inStock: dbItem.inStock ?? false,
       originalPrice: dbItem.originalPrice || undefined,
+      // FIX: Add 'category' with a default value for backward compatibility.
+      // This prevents errors if you have old items in your DB without a category.
+      category: dbItem.category || 'Uncategorized',
     }));
 
     return NextResponse.json(items, { status: 200 });
@@ -42,7 +41,7 @@ export async function GET() {
   }
 }
 
-// --- POST: Creates a new item with strong typing ---
+// --- POST: Creates a new item, now including the 'category' field ---
 export async function POST(request: NextRequest) {
   const session = await getSession();
   if (!session?.userId) {
@@ -54,14 +53,18 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const body: Omit<Item, '_id' | 'userId' | 'createdAt'> = await request.json();
-    const { name, description, itemCode, imageBase64, price, currency, inStock, originalPrice } = body;
+    // FIX: Destructure 'category' from the request body.
+    const body: Partial<Omit<Item, '_id' | 'userId' | 'createdAt'>> = await request.json();
+    const { name, description, itemCode, imageBase64, price, currency, inStock, originalPrice, category } = body;
 
-    if (!name || !description || !itemCode || !imageBase64 || price === undefined || !currency || inStock === undefined) {
-      return NextResponse.json({ message: 'Missing required fields' }, { status: 400 });
+    // FIX: Add 'category' to the validation to make it a required field.
+    if (!name || !description || !imageBase64 || price === undefined || !currency || inStock === undefined || !category) {
+      return NextResponse.json({ message: 'Missing required fields. Name, description, image, price, currency, stock status, and category are all required.' }, { status: 400 });
     }
     
-    // ... (rest of your validation logic is good)
+    if (originalPrice && price >= originalPrice) {
+        return NextResponse.json({ message: 'Original price must be greater than the current price.' }, { status: 400 });
+    }
 
     const client = await clientPromise;
     const db = client.db(process.env.MONGODB_DB_NAME);
@@ -69,7 +72,9 @@ export async function POST(request: NextRequest) {
     
     const newItemData = {
       name, description, itemCode, imageBase64, price, currency, inStock,
-      originalPrice: originalPrice !== undefined ? originalPrice : undefined,
+      originalPrice: originalPrice || undefined,
+      // FIX: Add 'category' to the object being inserted into the database.
+      category,
       userId: session.userId,
       createdAt: new Date(),
     };

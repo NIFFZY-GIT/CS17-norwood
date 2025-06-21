@@ -25,6 +25,7 @@ export interface Item {
   inStock: boolean;
   originalPrice?: number; // Optional: Used to show a 'sale' price next to a strikethrough price
      // Optional: A number from 0 to 5 for star ratings
+  category: string;
 }
 
 /**
