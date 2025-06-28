@@ -1,10 +1,10 @@
 // src/app/api/me/route.ts
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import clientPromise from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   const session = await getSession();
   if (!session?.userId) {
     return NextResponse.json({ message: "Not logged in" }, { status: 401 });

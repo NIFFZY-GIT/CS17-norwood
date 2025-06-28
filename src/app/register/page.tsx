@@ -1,9 +1,9 @@
+//src/app/register/page.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, Variants } from 'framer-motion';
-// MODIFIED: Added Eye and EyeOff icons
 import { Mail, Lock, Coffee, Eye, EyeOff } from 'lucide-react';
 import Image from 'next/image';
 import QuizPopup from "@/components/QuizPopup";
@@ -60,10 +60,9 @@ export default function RegisterPage() {
   const [form, setForm] = useState({ email: '', password: '', confirmPassword: '' });
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false); // <-- State for password visibility
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false); // <-- State for confirm password
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-
   const [showQuiz, setShowQuiz] = useState(false);
 
   useEffect(() => {
@@ -97,8 +96,7 @@ export default function RegisterPage() {
 
       if (res.ok) {
         setShowQuiz(true);
-        return;
-        // router.push('/login?registered=true');
+        return; // Stop execution to show the quiz
       } else {
         const data = await res.json().catch(() => ({ message: 'Registration failed.' }));
         setError(data.message || 'Something went wrong.');
@@ -132,13 +130,11 @@ export default function RegisterPage() {
             {error && <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-4 text-sm text-center text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg py-2">{error}</motion.div>}
 
             <motion.form onSubmit={handleRegister} variants={containerVariants} className="space-y-5">
-
               <motion.div variants={itemVariants} className="relative">
                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input type="email" placeholder="Email Address" className="w-full pl-12 pr-4 py-3 bg-gray-800/60 rounded-lg border border-gray-700 focus:border-green-500 focus:ring-2 focus:ring-green-500/50 transition-all duration-300 outline-none" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} disabled={isLoading} required />
               </motion.div>
-              
-              {/* --- START: Updated Password Input --- */}
+
               <motion.div variants={itemVariants} className="relative">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
@@ -160,9 +156,7 @@ export default function RegisterPage() {
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </motion.div>
-              {/* --- END: Updated Password Input --- */}
 
-              {/* --- START: Updated Confirm Password Input --- */}
               <motion.div variants={itemVariants} className="relative">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
@@ -183,7 +177,6 @@ export default function RegisterPage() {
                   {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </motion.div>
-              {/* --- END: Updated Confirm Password Input --- */}
 
               <motion.div variants={itemVariants}>
                 <button type="submit" className={`w-full font-semibold py-3 rounded-lg transition-all duration-300 ease-in-out ${isLoading ? 'bg-gray-600 cursor-not-allowed' : 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 shadow-lg shadow-green-500/20 hover:shadow-emerald-500/40'}`} disabled={isLoading}>
@@ -200,16 +193,39 @@ export default function RegisterPage() {
         </div>
       </div>
 
-      
+      {/* *** MODIFIED AND IMPROVED SECTION *** */}
       {showQuiz && (
         <QuizPopup
-          onComplete={async (prefs: { category: string; time: string; frequency: string }) => {
-            await fetch('/api/preferences', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ email: form.email, preferences: prefs }),
-            });
-            router.push('/home');
+          onComplete={async (prefs) => {
+            // Log the object received from the quiz to ensure it's correct
+            console.log("Quiz completed. Preferences object to be saved:", prefs);
+
+            try {
+              const res = await fetch('/api/preferences', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                // Pass the prefs object directly. JSON.stringify will handle the nesting.
+                // This is the key fix.
+                body: JSON.stringify({
+                  email: form.email,
+                  preferences: prefs
+                }),
+              });
+
+              if (!res.ok) {
+                // If the server responds with an error, log it.
+                const errorData = await res.json();
+                console.error('Failed to save preferences:', errorData.message);
+                // Optionally, show an error to the user
+              }
+
+            } catch (apiError) {
+              console.error("An error occurred while calling the preferences API:", apiError);
+              // Handle network errors or other exceptions
+            } finally {
+              // Always redirect the user after the attempt, success or fail.
+              router.push('/');
+            }
           }}
         />
       )}

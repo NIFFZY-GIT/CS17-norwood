@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { X } from "lucide-react";
@@ -23,9 +23,15 @@ const quizSteps = [
   }
 ];
 
-export default function QuizPopup({ onComplete }: { onComplete: (prefs: any) => void }) {
+type QuizPrefs = {
+  category?: string;
+  time?: string;
+  frequency?: string;
+};
+
+export default function QuizPopup({ onComplete }: { onComplete: (prefs: QuizPrefs) => void }) {
   const [step, setStep] = useState(0);
-  const [answers, setAnswers] = useState<any>({});
+  const [answers, setAnswers] = useState<QuizPrefs>({});
   const router = useRouter();
 
   const handleSelect = (option: string) => {
@@ -50,12 +56,12 @@ export default function QuizPopup({ onComplete }: { onComplete: (prefs: any) => 
       <motion.div className="bg-gray-900 text-white rounded-xl p-8 w-[90%] max-w-md shadow-2xl relative">
         <button
           className="absolute top-4 right-4 text-gray-400 hover:text-gray-200"
-          onClick={() => router.push("/home")}
+          onClick={() => router.push("/")}
         >
           <X size={20} />
         </button>
 
-        <p className="text-sm text-right text-gray-500 mb-2 underline cursor-pointer" onClick={() => router.push("/home")}>Skip Quiz</p>
+        <p className="text-sm text-right text-gray-500 mb-2 underline cursor-pointer" onClick={() => router.push("/")}>Skip Quiz</p>
 
         <h2 className="text-2xl font-bold mb-4 text-amber-400">{quizSteps[step].question}</h2>
         <div className="grid gap-3">
