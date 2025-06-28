@@ -6,6 +6,8 @@ import { motion, Variants } from 'framer-motion';
 // MODIFIED: Added Eye and EyeOff icons
 import { Mail, Lock, Coffee, Eye, EyeOff } from 'lucide-react';
 import Image from 'next/image';
+import QuizPopup from "@/components/QuizPopup";
+
 
 // --- Motion Variants ---
 const containerVariants: Variants = {
@@ -62,6 +64,8 @@ export default function RegisterPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false); // <-- State for confirm password
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
 
+  const [showQuiz, setShowQuiz] = useState(false);
+
   useEffect(() => {
     const handleMouseMove = (event: MouseEvent) => {
       setMousePosition({ x: event.clientX, y: event.clientY });
@@ -92,7 +96,9 @@ export default function RegisterPage() {
       });
 
       if (res.ok) {
-        router.push('/login?registered=true');
+        setShowQuiz(true);
+        return;
+        // router.push('/login?registered=true');
       } else {
         const data = await res.json().catch(() => ({ message: 'Registration failed.' }));
         setError(data.message || 'Something went wrong.');
@@ -193,6 +199,20 @@ export default function RegisterPage() {
           </motion.div>
         </div>
       </div>
+
+      
+      {showQuiz && (
+        <QuizPopup
+          onComplete={async (prefs: { category: string; time: string; frequency: string }) => {
+            await fetch('/api/preferences', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email: form.email, preferences: prefs }),
+            });
+            router.push('/home');
+          }}
+        />
+      )}
     </div>
   );
 }

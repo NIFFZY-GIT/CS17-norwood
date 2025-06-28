@@ -14,12 +14,19 @@ const ProductsPage = () => {
   
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [preferredCategory, setPreferredCategory] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchItems = async () => {
       setIsLoading(true);
       setError(null);
       try {
+        const userRes = await fetch("/api/me"); //
+        const userData = await userRes.json();
+        const preference = userData?.preferences?.category || null;
+        setPreferredCategory(preference);
+
+
         const res = await fetch("/api/items");
         if (!res.ok) throw new Error((await res.json()).message || 'Failed to fetch products');
         const data: Item[] = await res.json();
@@ -35,10 +42,16 @@ const ProductsPage = () => {
     fetchItems();
   }, []);
 
-  const filteredItems = useMemo(() => {
-    if (selectedCategory === 'All') return allItems;
-    return allItems.filter(item => item.category === selectedCategory);
-  }, [selectedCategory, allItems]);
+   const filteredItems = useMemo(() => {
+    const items = selectedCategory === 'All' ? allItems : allItems.filter(item => item.category === selectedCategory);
+    if (preferredCategory) {
+      return [
+        ...items.filter(item => item.category === preferredCategory),
+        ...items.filter(item => item.category !== preferredCategory),
+      ];
+    }
+    return items;
+  }, [selectedCategory, allItems, preferredCategory]);
 
   const categories = useMemo(() => {
     if (allItems.length === 0) return [];
