@@ -32,6 +32,7 @@
     "neko-ts": "^0.0.6",
     "next": "^15.2.4",
     "next-auth": "^4.24.11",
+    "node": "^22.17.0",
     "node-mailjet": "^6.0.8",
     "nodemailer": "^6.10.1",
     "react": "^19.0.0",
