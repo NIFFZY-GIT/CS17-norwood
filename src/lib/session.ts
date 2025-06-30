@@ -26,6 +26,7 @@ export interface SessionData {
   expires?: Date;
 }
 
+// In your session.ts, ensure the JWT includes userId
 export async function encrypt(payload: { userId: string; username: string; role: string }): Promise<string> {
   return new SignJWT(payload as AppJWTPayload)
     .setProtectedHeader({ alg: 'HS256' })
