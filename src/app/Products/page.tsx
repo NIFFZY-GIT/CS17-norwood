@@ -7,6 +7,7 @@ import { Item } from "@/lib/types";
 // FIX: All these imports will now be used by the restored JSX
 import { Loader2, ServerCrash, PackageSearch, Sparkles, Leaf, Flame } from "lucide-react";
 import { Toaster, toast } from 'sonner';
+import router from "next/router";
 
 const ProductsPage = () => {
   const [allItems, setAllItems] = useState<Item[]>([]);
@@ -46,12 +47,42 @@ const ProductsPage = () => {
     return ['All', ...Array.from(uniqueCategories)];
   }, [allItems]);
 
-  const handleAddToCart = (item: Item) => {
-    console.log(`Adding ${item.name} to cart!`, item);
-    toast.success(`${item.name} added to your cart!`, {
-      style: { background: '#1f2937', color: '#f9fafb', border: '1px solid #374151' }
+  // Update the handleAddToCart function in your Products page
+// In your handleAddToCart functions in both product pages:
+const handleAddToCart = async (item: Item) => {
+  try {
+    const res = await fetch('/api/cart', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        productId: item._id,
+        quantity: 1,
+        name: item.name,
+        price: item.price,
+        image: item.imageBase64,
+      }),
     });
-  };
+
+    if (res.status === 401) {
+      toast.error('Please sign in to add items to your cart', {
+        action: {
+          label: 'Sign In',
+          onClick: () => router.push('/login')
+        }
+      });
+      return;
+    }
+
+    if (!res.ok) throw new Error('Failed to add to cart');
+
+    toast.success(`${item.name} added to your cart!`);
+  } catch (err) {
+    toast.error('Failed to add item to cart');
+    console.error('Add to cart error:', err);
+  }
+};
 
   const pageContainerVariants = { initial: { opacity: 0 }, animate: { opacity: 1, transition: { duration: 0.5 } } };
   const heroTextVariants = { initial: { opacity: 0, y: 20 }, animate: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "circOut" } } };

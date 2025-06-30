@@ -64,10 +64,33 @@ export default function ProductDetailsPage() {
     fetchItem();
   }, [itemId]);
 
-  const handleAddToCart = () => {
-    if (!item) return;
+  // Update the handleAddToCart function in your Product Details page
+const handleAddToCart = async () => {
+  if (!item) return;
+  
+  try {
+    const res = await fetch('/api/cart', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        productId: item._id,
+        quantity: quantity,
+        name: item.name,
+        price: item.price,
+        image: item.imageBase64,
+      }),
+    });
+
+    if (!res.ok) throw new Error('Failed to add to cart');
+
     toast.success(`${quantity} x ${item.name} added to cart!`);
-  };
+  } catch (err) {
+    toast.error('Failed to add item to cart');
+    console.error('Add to cart error:', err);
+  }
+};
   
   // --- FIX: Conditional Renders ---
   // These blocks handle all preliminary states and fix all errors.
