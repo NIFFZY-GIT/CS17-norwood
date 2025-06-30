@@ -64,36 +64,30 @@ export default function ProductDetailsPage() {
     fetchItem();
   }, [itemId]);
 
-  // Update the handleAddToCart function in your Product Details page
-const handleAddToCart = async () => {
-  if (!item) return;
-  
-  try {
-    const res = await fetch('/api/cart', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        productId: item._id,
-        quantity: quantity,
-        name: item.name,
-        price: item.price,
-        image: item.imageBase64,
-      }),
-    });
+  const handleAddToCart = async () => {
+    if (!item) return;
+    try {
+      const res = await fetch('/api/cart', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          productId: item._id,
+          quantity: quantity,
+          name: item.name,
+          price: item.price,
+          image: item.imageBase64,
+        }),
+      });
 
-    if (!res.ok) throw new Error('Failed to add to cart');
+      if (!res.ok) throw new Error((await res.json()).message || 'Failed to add to cart');
 
-    toast.success(`${quantity} x ${item.name} added to cart!`);
-  } catch (err) {
-    toast.error('Failed to add item to cart');
-    console.error('Add to cart error:', err);
-  }
-};
+      toast.success(`${quantity} x ${item.name} added to cart!`);
+    } catch (err) {
+      toast.error('Failed to add item to cart');
+      console.error('Add to cart error:', err);
+    }
+  };
   
-  // --- FIX: Conditional Renders ---
-  // These blocks handle all preliminary states and fix all errors.
   if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-slate-900">
@@ -112,7 +106,6 @@ const handleAddToCart = async () => {
     );
   }
 
-  // This check ensures 'item' is not null for the rest of the component.
   if (!item) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-slate-900">
@@ -121,7 +114,6 @@ const handleAddToCart = async () => {
     );
   }
 
-  // By this point, TypeScript knows 'item' is a valid 'Item' object.
   const isSale = item.originalPrice && item.originalPrice > item.price;
 
   return (

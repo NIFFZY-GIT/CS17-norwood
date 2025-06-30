@@ -6,11 +6,11 @@ import ModernProductCard from "@/components/ProductCard";
 import { Item } from "@/lib/types";
 // FIX: All these imports will now be used by the restored JSX
 import { Loader2, ServerCrash, PackageSearch, Sparkles, Leaf, Flame } from "lucide-react";
-import { Toaster, toast } from 'sonner';
-import router from "next/router";
+import { Toaster } from 'sonner';
 
 const ProductsPage = () => {
   const [allItems, setAllItems] = useState<Item[]>([]);
+  // FIX: This state is now used by the category filter buttons
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   
   const [isLoading, setIsLoading] = useState(true);
@@ -41,56 +41,23 @@ const ProductsPage = () => {
     return allItems.filter(item => item.category === selectedCategory);
   }, [selectedCategory, allItems]);
 
+  // FIX: 'categories' is now used to render the filter buttons
   const categories = useMemo(() => {
     if (allItems.length === 0) return [];
     const uniqueCategories = new Set(allItems.map(item => item.category));
     return ['All', ...Array.from(uniqueCategories)];
   }, [allItems]);
 
-  // Update the handleAddToCart function in your Products page
-// In your handleAddToCart functions in both product pages:
-const handleAddToCart = async (item: Item) => {
-  try {
-    const res = await fetch('/api/cart', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        productId: item._id,
-        quantity: 1,
-        name: item.name,
-        price: item.price,
-        image: item.imageBase64,
-      }),
-    });
+  // FIX: The handleAddToCart function has been removed as it is no longer used in this component.
+  // This resolves the 'handleAddToCart' and related 'err' unused variable errors.
 
-    if (res.status === 401) {
-      toast.error('Please sign in to add items to your cart', {
-        action: {
-          label: 'Sign In',
-          onClick: () => router.push('/login')
-        }
-      });
-      return;
-    }
-
-    if (!res.ok) throw new Error('Failed to add to cart');
-
-    toast.success(`${item.name} added to your cart!`);
-  } catch (err) {
-    toast.error('Failed to add item to cart');
-    console.error('Add to cart error:', err);
-  }
-};
-
+  // FIX: These variables are now used by the restored hero section JSX
   const pageContainerVariants = { initial: { opacity: 0 }, animate: { opacity: 1, transition: { duration: 0.5 } } };
   const heroTextVariants = { initial: { opacity: 0, y: 20 }, animate: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "circOut" } } };
   const heroFeatures = [{ icon: Flame, text: "Small-Batch" }, { icon: Leaf, text: "All-Natural" }, { icon: Sparkles, text: "Bold Flavors" }];
 
   return (
     <motion.section variants={pageContainerVariants} initial="initial" animate="animate" className="relative min-h-screen overflow-x-hidden bg-gray-900 text-white">
-      {/* FIX: The Toaster component is now rendered, fixing the 'unused' error */}
       <Toaster position="bottom-right" richColors />
       <div className="absolute inset-0 z-0 pointer-events-none">
         <motion.div className="absolute inset-0" style={{ backgroundImage: "radial-gradient(circle at 30% 70%, #842d0bAA 0%, #11182700 30%), radial-gradient(circle at 70% 30%, #d97706AA 0%, #11182700 25%)" }} animate={{ backgroundPosition: ["0% 0%", "100% 100%", "0% 0%"] }} transition={{ duration: 40, ease: "linear", repeat: Infinity, repeatType: "mirror" }} />
@@ -148,10 +115,8 @@ const handleAddToCart = async (item: Item) => {
            ) : (
             <motion.div key={selectedCategory} initial={{ opacity: 0 }} animate={{ opacity: 1, transition: { staggerChildren: 0.05 } }} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-10 md:gap-x-8 md:gap-y-12">
               {filteredItems.length > 0 ? (
-                // FIX: Added the 'index' from the map function
                 filteredItems.map((item, index) => (
-                  // FIX: Passed the 'index' prop to the card component
-                  <ModernProductCard key={item._id} item={item} index={index} onAddToCart={handleAddToCart} />
+                  <ModernProductCard key={item._id} item={item} index={index} />
                 ))
               ) : (
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="col-span-full text-center py-20 text-slate-400">

@@ -1,9 +1,9 @@
 'use client';
 
-import Link from 'next/link'; // <-- 1. Import the Link component
+import Link from 'next/link';
 import { motion } from 'framer-motion';
 import NextImage from 'next/image';
-import { ShoppingCart, ScanLine } from 'lucide-react';
+import { ScanLine } from 'lucide-react'; // ShoppingCart icon is no longer needed
 import type { Item } from '@/lib/types';
 
 // Helper to format currency
@@ -15,13 +15,14 @@ const formatCurrency = (amount: number, currency?: string) => {
   }).format(amount);
 };
 
+// The onAddToCart prop has been removed from the interface
 interface ModernProductCardProps {
   item: Item;
   index: number;
-  onAddToCart: (item: Item) => void;
 }
 
-const ModernProductCard = ({ item, index, onAddToCart }: ModernProductCardProps) => {
+// The onAddToCart function has been removed from the component's parameters
+const ModernProductCard = ({ item, index }: ModernProductCardProps) => {
   const cardVariants = {
     hidden: { opacity: 0, y: 50, scale: 0.95 },
     visible: {
@@ -32,21 +33,15 @@ const ModernProductCard = ({ item, index, onAddToCart }: ModernProductCardProps)
     },
   } as const;
 
-  const handleAddToCartClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-    // This is the key to making the button work inside a link.
-    // It prevents the click from bubbling up and triggering navigation.
-    e.stopPropagation();
-    onAddToCart(item);
-  };
+  // The handleAddToCartClick function has been removed as it's no longer used.
 
   const isSale = item.originalPrice && item.originalPrice > item.price;
 
   return (
-    // --- 2. WRAP THE ENTIRE CARD IN A LINK ---
-    // The link will navigate to the dynamic product details page.
+    // The entire card remains a link for navigating to the details page
     <Link
       href={`/Products/${item._id}`}
-      className="block h-full" // 'block' and 'h-full' make the link fill the grid cell
+      className="block h-full"
       aria-label={`View details for ${item.name}`}
     >
       <motion.div
@@ -91,7 +86,8 @@ const ModernProductCard = ({ item, index, onAddToCart }: ModernProductCardProps)
             </div>
           )}
 
-          <div className="mt-auto pt-4 border-t border-slate-700 flex items-center justify-between gap-4">
+          {/* The bottom section is now simplified */}
+          <div className="mt-auto pt-4 border-t border-slate-700">
             <div className="flex flex-col text-left">
               {isSale && item.originalPrice && (
                 <span className="text-sm text-slate-500 line-through">
@@ -102,16 +98,7 @@ const ModernProductCard = ({ item, index, onAddToCart }: ModernProductCardProps)
                 {formatCurrency(item.price, item.currency)}
               </span>
             </div>
-            {/* This button will still work correctly due to e.stopPropagation() */}
-            <button
-              onClick={handleAddToCartClick}
-              disabled={!item.inStock}
-              className="flex-shrink-0 flex items-center justify-center gap-2 bg-gray-800/70 text-slate-200 font-semibold py-2.5 px-4 rounded-md transition-all duration-300 ease-out border border-slate-700 shadow-md hover:bg-amber-600 hover:text-slate-900 hover:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-opacity-70 disabled:bg-slate-700/50 disabled:text-slate-500 disabled:cursor-not-allowed disabled:hover:bg-slate-700/50 disabled:hover:text-slate-500"
-              title={item.inStock ? 'Add to Cart' : 'Item is out of stock'}
-            >
-              <ShoppingCart size={18} />
-              <span className="hidden sm:inline">Add to Cart</span>
-            </button>
+            {/* --- THE ADD TO CART BUTTON WAS HERE AND HAS BEEN REMOVED --- */}
           </div>
         </div>
       </motion.div>
