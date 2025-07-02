@@ -1,4 +1,3 @@
-// app/cart/page.tsx
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -6,6 +5,7 @@ import { motion } from 'framer-motion';
 import { ShoppingCart, X, Loader2 } from 'lucide-react';
 import { Toaster, toast } from 'sonner';
 import Link from 'next/link';
+import Image from 'next/image'; // FIX: Import the next/image component
 
 interface CartItem {
   _id: string;
@@ -20,8 +20,6 @@ export default function CartPage() {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [total, setTotal] = useState(0);
-  // const [isLoggedIn, setIsLoggedIn] = useState(false);
-  //const router = useRouter();
 
   useEffect(() => {
     const fetchCart = async () => {
@@ -30,7 +28,6 @@ export default function CartPage() {
       try {
         const res = await fetch('/api/cart');
         
-        // Successful response (200-299)
         if (res.ok) {
           const data = await res.json();
           setCartItems(data);
@@ -38,15 +35,10 @@ export default function CartPage() {
           return;
         }
         
-        // Unauthorized (401) - not logged in
         if (res.status === 401) {
           setCartItems([]);
           return;
         }
-        
-        // Other error statuses
-        // const errorData = await res.json();
-        //throw new Error(errorData.error || 'Failed to fetch cart');
         
       } catch (err) {
         console.error('Cart fetch error:', err);
@@ -58,65 +50,61 @@ export default function CartPage() {
     fetchCart();
   }, []);
 
-  
-
   const calculateTotal = (items: CartItem[]) => {
     const sum = items.reduce((acc, item) => acc + (item.price * item.quantity), 0);
     setTotal(sum);
   };
 
   const updateQuantity = async (id: string, newQuantity: number) => {
-  if (newQuantity < 1) return;
-  
-  try {
-    const res = await fetch(`/api/cart?id=${id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ quantity: newQuantity }),
-    });
+    if (newQuantity < 1) return;
     
-    const data = await res.json();
-    
-    if (!res.ok) {
-      throw new Error(data.error || 'Failed to update quantity');
+    try {
+      const res = await fetch(`/api/cart?id=${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ quantity: newQuantity }),
+      });
+      
+      const data = await res.json();
+      
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to update quantity');
+      }
+      
+      const updatedCart = cartItems.map(item => 
+        item._id === id ? { ...item, quantity: newQuantity } : item
+      );
+      
+      setCartItems(updatedCart);
+      calculateTotal(updatedCart);
+      toast.success('Quantity updated');
+    } catch (error) {
+      console.error('Update quantity error:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to update quantity');
     }
-    
-    const updatedCart = cartItems.map(item => 
-      item._id === id ? { ...item, quantity: newQuantity } : item
-    );
-    
-    setCartItems(updatedCart);
-    calculateTotal(updatedCart);
-    toast.success('Quantity updated');
-  } catch (error) {
-    console.error('Update quantity error:', error);
-    toast.error(error instanceof Error ? error.message : 'Failed to update quantity');
-  }
-};
+  };
 
-const removeItem = async (id: string) => {
-  try {
-    const res = await fetch(`/api/cart?id=${id}`, {
-      method: 'DELETE',
-    });
-    
-    const data = await res.json();
-    
-    if (!res.ok) {
-      throw new Error(data.error || 'Failed to remove item');
+  const removeItem = async (id: string) => {
+    try {
+      const res = await fetch(`/api/cart?id=${id}`, {
+        method: 'DELETE',
+      });
+      
+      const data = await res.json();
+      
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to remove item');
+      }
+      
+      const updatedCart = cartItems.filter(item => item._id !== id);
+      setCartItems(updatedCart);
+      calculateTotal(updatedCart);
+      toast.success('Item removed from cart');
+    } catch (error) {
+      console.error('Remove item error:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to remove item');
     }
-    
-    const updatedCart = cartItems.filter(item => item._id !== id);
-    setCartItems(updatedCart);
-    calculateTotal(updatedCart);
-    toast.success('Item removed from cart');
-  } catch (error) {
-    console.error('Remove item error:', error);
-    toast.error(error instanceof Error ? error.message : 'Failed to remove item');
-  }
-};
+  };
 
   if (isLoading) {
     return (
@@ -157,10 +145,13 @@ const removeItem = async (id: string) => {
                     animate={{ opacity: 1, y: 0 }}
                     className="p-4 flex gap-4"
                   >
-                    <div className="w-20 h-20 bg-gray-700 rounded-lg overflow-hidden">
-                      <img 
+                    <div className="w-20 h-20 bg-gray-700 rounded-lg overflow-hidden flex-shrink-0">
+                      {/* FIX: Replaced <img> with next/image's Image component */}
+                      <Image
                         src={item.image} 
                         alt={item.name}
+                        width={80}  // w-20 in Tailwind is 5rem = 80px
+                        height={80} // h-20 in Tailwind is 5rem = 80px
                         className="w-full h-full object-cover"
                       />
                     </div>
@@ -232,6 +223,4 @@ const removeItem = async (id: string) => {
       </div>
     </div>
   );
-
-  
 }

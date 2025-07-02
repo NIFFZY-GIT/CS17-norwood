@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'; // Removed unused NextRequest
+import { NextResponse } from 'next/server';
 import clientPromise from '@/lib/mongodb';
 import { getSession } from '@/lib/session';
 import { Item } from '@/lib/types';
@@ -10,11 +10,13 @@ interface ItemFromDB extends Omit<Item, '_id'> {
 
 // --- GET: Retrieves a single item ---
 export async function GET(
-  // CHANGED: Using the standard web 'Request' type
   request: Request,
-  context: { params: { itemId: string } } 
+  // FIX: The second argument is destructured directly. This resolves the TypeScript
+  // error and is a common pattern for accessing route parameters.
+  { params }: { params: { itemId: string } } 
 ) {
-  const { itemId } = context.params;
+  // FIX: We can now get itemId directly from the destructured params
+  const { itemId } = params;
 
   if (!ObjectId.isValid(itemId)) {
     return NextResponse.json({ message: 'Invalid item ID format' }, { status: 400 });
@@ -48,11 +50,11 @@ export async function GET(
 
 // --- PUT: Updates an existing item ---
 export async function PUT(
-  // CHANGED: Using the standard web 'Request' type
   request: Request, 
-  context: { params: { itemId: string } }
+  // FIX: Applied the same destructuring pattern here for consistency.
+  { params }: { params: { itemId: string } }
 ) {
-  const { itemId } = context.params;
+  const { itemId } = params;
   const session = await getSession();
   if (!session?.userId) return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   if (!ObjectId.isValid(itemId)) return NextResponse.json({ message: 'Invalid item ID' }, { status: 400 });
@@ -106,11 +108,11 @@ export async function PUT(
 
 // --- DELETE: Removes an item ---
 export async function DELETE(
-  // CHANGED: Using the standard web 'Request' type
   request: Request,
-  context: { params: { itemId: string } }
+  // FIX: Applied the same destructuring pattern here for consistency.
+  { params }: { params: { itemId: string } }
 ) {
-  const { itemId } = context.params;
+  const { itemId } = params;
   const session = await getSession();
   if (!session?.userId) return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   if (!ObjectId.isValid(itemId)) return NextResponse.json({ message: 'Invalid item ID format' }, { status: 400 });
