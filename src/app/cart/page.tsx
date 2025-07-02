@@ -20,7 +20,7 @@ export default function CartPage() {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [total, setTotal] = useState(0);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  // const [isLoggedIn, setIsLoggedIn] = useState(false);
   //const router = useRouter();
 
   useEffect(() => {
@@ -35,19 +35,17 @@ export default function CartPage() {
           const data = await res.json();
           setCartItems(data);
           calculateTotal(data);
-          setIsLoggedIn(true);
           return;
         }
         
         // Unauthorized (401) - not logged in
         if (res.status === 401) {
-          setIsLoggedIn(false);
           setCartItems([]);
           return;
         }
         
         // Other error statuses
-        const errorData = await res.json();
+        // const errorData = await res.json();
         //throw new Error(errorData.error || 'Failed to fetch cart');
         
       } catch (err) {
