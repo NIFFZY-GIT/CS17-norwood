@@ -1,25 +1,20 @@
-// app/api/register/route.ts
 import { NextResponse } from 'next/server';
 import clientPromise from '@/lib/mongodb';
 import bcrypt from 'bcryptjs';
+import { QuizPrefs } from '@/lib/types'; // Import the type
 
 export async function POST(req: Request) {
   try {
+    // The request body can now contain preferences
     const body = await req.json();
-    const { email, password } = body;
+    const { email, password, preferences } = body as { email: string, password: string, preferences?: QuizPrefs };
 
+    // --- Validation ---
     if (!email || !password) {
-      return NextResponse.json(
-        { message: 'Email and password are required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ message: 'Email and password are required' }, { status: 400 });
     }
-    
     if (password.length < 8) {
-      return NextResponse.json(
-        { message: 'Password must be at least 8 characters long' },
-        { status: 400 }
-      );
+      return NextResponse.json({ message: 'Password must be at least 8 characters long' }, { status: 400 });
     }
 
     const client = await clientPromise;
@@ -29,43 +24,30 @@ export async function POST(req: Request) {
     const existingUser = await users.findOne({ email: email.toLowerCase() });
 
     if (existingUser) {
-      return NextResponse.json(
-        { message: 'An account with this email already exists.' },
-        { status: 409 }
-      );
+      return NextResponse.json({ message: 'An account with this email already exists.' }, { status: 409 });
     }
 
+    // --- User Creation ---
     const hashedPassword = await bcrypt.hash(password, 10);
-
     const newUser = {
       email: email.toLowerCase(),
       password: hashedPassword,
-        role: 'user',
+      role: 'user',
       createdAt: new Date(),
+      // Add preferences if they exist, otherwise default to an empty object
+      preferences: preferences || {},
     };
 
-    const result = await users.insertOne(newUser);
+    await users.insertOne(newUser);
 
+    // Return a simple success message. No need to return the ID anymore.
     return NextResponse.json({
       message: 'User registered successfully',
-      userId: result.insertedId,
     }, { status: 201 });
 
-  } catch (error: unknown) { // MODIFIED: Changed 'any' to 'unknown'
-    
-    // MODIFIED: Added a type check to safely handle the error
-    if (error instanceof Error) {
-      console.error('REGISTRATION_ERROR:', error.message);
-      return NextResponse.json(
-        { message: `An internal server error occurred: ${error.message}` },
-        { status: 500 }
-      );
-    } else {
-      console.error('REGISTRATION_ERROR: An unknown error occurred', error);
-      return NextResponse.json(
-        { message: 'An unexpected internal server error occurred.' },
-        { status: 500 }
-      );
-    }
+  } catch (error: unknown) {
+    console.error('REGISTRATION_ERROR:', error);
+    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+    return NextResponse.json({ message: `An internal server error occurred: ${errorMessage}` }, { status: 500 });
   }
 }
