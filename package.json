@@ -12,6 +12,7 @@
     "@headlessui/react": "^2.2.4",
     "@next/font": "^14.2.15",
     "@tsparticles/engine": "^3.8.1",
+    "ai": "^4.3.17",
     "bcryptjs": "^3.0.2",
     "cloudinary": "^2.6.1",
     "color-thief-react": "^2.1.0",

@@ -2,8 +2,12 @@
 
 import type { Metadata } from "next";
 import "./globals.css";
+import { Inter } from "next/font/google";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import ChatbotWidget from "@/components/ChatbotWidget"; // Keep this import
+
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Norwood Empire",
@@ -17,12 +21,13 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    // Highlight: Add the suppressHydrationWarning prop here
     <html lang="en" suppressHydrationWarning>
-      <body className="bg-background text-foreground transition-all">
+      {/* 👇 Apply the font class name here 👇 */}
+      <body className={`bg-background text-foreground transition-all ${inter.className}`}>
         <Navbar />
         <main className="pt-20">{children}</main>
         <Footer />
+        <ChatbotWidget />
       </body>
     </html>
   );

@@ -5,6 +5,7 @@ import WhyChoose from "@/components/WhyChoose";
 import WhoWeAre from "@/components/WhoWeAre";
 import OurBrands from "@/components/OurBrands";
 
+
 export default function Home() {
   return (
     <main className="relative">
@@ -14,6 +15,7 @@ export default function Home() {
       <WhyChoose />
       <WhoWeAre />
       <OurBrands />
+
     </main>
   );
 }
