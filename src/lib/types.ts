@@ -6,26 +6,30 @@
 
 /**
  * Represents a product/item in your store.
- * This interface combines backend fields (_id, userId) with frontend
- * e-commerce requirements (price, inStock, rating).
  */
 export interface Item {
-  // --- Core Database Fields ---
   _id: string;
   name: string;
   description: string;
   imageBase64: string;
-  itemCode?: string; // Optional, as not all items might have a public code
-  userId: string; // ID of the user/admin who created the item
+  itemCode?: string;
+  userId: string;
   createdAt: Date;
-
-  // --- E-commerce Fields (for the product card & logic) ---
   price: number;
-  currency: 'LKR' | 'USD' | 'EUR' | 'GBP'; // Extend this union type with more currencies as needed
+  currency: 'LKR' | 'USD' | 'EUR' | 'GBP';
   inStock: boolean;
-  originalPrice?: number; // Optional: Used to show a 'sale' price next to a strikethrough price
-     // Optional: A number from 0 to 5 for star ratings
-  category: string;
+  originalPrice?: number;
+  // --- RECOMMENDATION ATTRIBUTES ---
+  category: 'Snacks' | 'Bites' | 'Drinks' | string; // Base category
+  tags: ('salty' | 'sweet' | 'spicy' | 'healthy' | 'morning' | 'afternoon' | 'night')[]; // Descriptive tags
+}
+/**
+ * Represents the quiz preferences a user can select.
+ */
+export interface QuizPrefs {
+  category?: 'Snacks' | 'Bites';
+  time?: 'Morning' | 'Afternoon' | 'Night' | 'Anytime';
+  frequency?: 'Once' | '2-3 times' | 'Frequently' | 'Rarely';
 }
 
 /**
@@ -33,8 +37,8 @@ export interface Item {
  */
 export interface UserSession {
   userId: string;
-  username: string;
-  isAdmin?: boolean; // Good to have for role-based access
+  email: string; // Changed from username to email for consistency
+  isAdmin?: boolean;
 }
 
 /**
@@ -42,12 +46,13 @@ export interface UserSession {
  */
 export interface User {
   _id: string;
-  username:string;
-  email?: string;
+  email: string;
+  password?: string;
   createdAt: Date;
   isAdmin?: boolean;
+  preferences?: QuizPrefs;
+  viewHistory?: string[]; // Array of Item _id strings
 }
-
 
 // =================================================================
 // CAREERS & RECRUITMENT TYPES
@@ -63,7 +68,7 @@ export interface Vacancy {
   location: string;
   description: string;
   type: 'Full-time' | 'Part-time' | 'Contract' | 'Internship';
-  isActive: boolean; // To show/hide on the careers page
+  isActive: boolean;
   createdAt: Date;
 }
 
@@ -77,8 +82,8 @@ export interface Application {
   fullName: string;
   email: string;
   phone: string;
-  cvMimeType: string; // e.g., 'application/pdf'
-  cvBase64: string; // CV stored as a Base64 string
+  cvMimeType: string;
+  cvBase64: string;
   agreedToTerms: boolean;
   agreedToPrivacy: boolean;
   createdAt: Date;
