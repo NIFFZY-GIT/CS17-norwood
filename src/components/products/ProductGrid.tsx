@@ -2,17 +2,19 @@
 
 import { motion } from 'framer-motion';
 import { Item } from '@/lib/types';
-import ModernProductCard from '@/components/ProductCard';
+// --- THE FIX IS HERE ---
+// Use an absolute path alias for robustness. This assumes your card component is at src/components/ModernProductCard.tsx
+import ModernProductCard  from '@/components/ProductCard';
 import { PackageSearch } from 'lucide-react';
 
 interface ProductGridProps {
     items: Item[];
-    recommendedItems: Item[];
     selectedCategory: string;
 }
 
-export function ProductGrid({ items, recommendedItems, selectedCategory }: ProductGridProps) {
-    if (items.length === 0 && recommendedItems.length === 0) {
+// Ensure this is a named export
+export function ProductGrid({ items, selectedCategory }: ProductGridProps) {
+    if (items.length === 0) {
         return (
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="col-span-full text-center py-20 text-slate-400">
                 <PackageSearch size={80} className="mx-auto text-amber-500/50 mb-8" />
@@ -29,18 +31,8 @@ export function ProductGrid({ items, recommendedItems, selectedCategory }: Produ
             animate={{ opacity: 1, transition: { staggerChildren: 0.05 } }} 
             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-10 md:gap-x-8 md:gap-y-12"
         >
-            {recommendedItems.length > 0 && (
-                <>
-                    <div className="col-span-full">
-                        <h3 className="text-2xl font-bold text-white mb-4">Others Also Liked</h3>
-                    </div>
-                    {recommendedItems.map((item, index) => (
-                        <ModernProductCard key={item._id} item={item} index={index} />
-                    ))}
-                </>
-            )}
             {items.map((item, index) => (
-                <ModernProductCard key={item._id} item={item} index={index + recommendedItems.length} />
+                <ModernProductCard key={item._id} item={item} index={index} />
             ))}
         </motion.div>
     );
