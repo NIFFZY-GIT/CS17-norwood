@@ -1,22 +1,14 @@
 // app/checkout/page.tsx
 'use client';
 
-<<<<<<< Updated upstream
 // FIX: Import additional types from React
 import { useEffect, useState, FormEvent, ChangeEvent, ElementType, InputHTMLAttributes } from 'react';
-=======
-import { useEffect, useState, FormEvent, ChangeEvent } from 'react';
->>>>>>> Stashed changes
 import { motion } from 'framer-motion';
 import { Loader2, Lock, ShoppingBag, User as UserIcon, Mail, Phone, Home } from 'lucide-react';
 import { Toaster, toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 
-<<<<<<< Updated upstream
-=======
-// Assuming CartItem is defined as in your cart page
->>>>>>> Stashed changes
 interface CartItem {
   _id: string;
   productId: string;
@@ -26,19 +18,11 @@ interface CartItem {
   image: string;
 }
 
-<<<<<<< Updated upstream
-=======
-// Data from the user's session
->>>>>>> Stashed changes
 interface UserSessionData {
   userId: string;
   email: string;
 }
 
-<<<<<<< Updated upstream
-=======
-// Shape of the form data
->>>>>>> Stashed changes
 interface FormData {
     fullName: string;
     email: string;
@@ -49,7 +33,6 @@ interface FormData {
     country: string;
 }
 
-<<<<<<< Updated upstream
 // FIX: Define a proper interface for the FormInput props
 interface FormInputProps extends InputHTMLAttributes<HTMLInputElement> {
   id: string;
@@ -58,8 +41,6 @@ interface FormInputProps extends InputHTMLAttributes<HTMLInputElement> {
   error?: string; // error is optional
 }
 
-=======
->>>>>>> Stashed changes
 export default function CheckoutPage() {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [total, setTotal] = useState(0);
@@ -72,28 +53,16 @@ export default function CheckoutPage() {
     address: '',
     city: '',
     postalCode: '',
-<<<<<<< Updated upstream
     country: 'Sri Lanka',
-=======
-    country: 'Sri Lanka', // Default value
->>>>>>> Stashed changes
   });
   const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
 
   const router = useRouter();
 
-<<<<<<< Updated upstream
-=======
-  // Fetch initial data (cart and user session)
->>>>>>> Stashed changes
   useEffect(() => {
     const fetchInitialData = async () => {
       setIsLoading(true);
       try {
-<<<<<<< Updated upstream
-=======
-        // Fetch cart items
->>>>>>> Stashed changes
         const cartRes = await fetch('/api/cart');
         if (!cartRes.ok) {
           if (cartRes.status === 401) {
@@ -114,11 +83,6 @@ export default function CheckoutPage() {
         setCartItems(cartData);
         calculateTotal(cartData);
 
-<<<<<<< Updated upstream
-=======
-        // Fetch user session to pre-fill email. 
-        // Note: You will need to create this API endpoint.
->>>>>>> Stashed changes
         const sessionRes = await fetch('/api/session'); 
         if (sessionRes.ok) {
           const sessionData: UserSessionData = await sessionRes.json();
@@ -144,10 +108,6 @@ export default function CheckoutPage() {
   const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-<<<<<<< Updated upstream
-=======
-    // Clear the error for the field being edited
->>>>>>> Stashed changes
     if (errors[name as keyof FormData]) {
       setErrors(prev => {
         const newErrors = { ...prev };
@@ -186,39 +146,23 @@ export default function CheckoutPage() {
     toast.loading("Placing your order...");
 
     try {
-<<<<<<< Updated upstream
-=======
-      // Note: You will need to create this API endpoint.
->>>>>>> Stashed changes
       const res = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           shippingDetails: formData,
-<<<<<<< Updated upstream
           cartItems: cartItems,
-=======
-          cartItems: cartItems, // Send cart items for server-side verification
->>>>>>> Stashed changes
         }),
       });
 
       const result = await res.json();
-<<<<<<< Updated upstream
       toast.dismiss();
-=======
-      toast.dismiss(); // Dismiss loading toast
->>>>>>> Stashed changes
 
       if (!res.ok) {
         throw new Error(result.error || 'Failed to place order.');
       }
 
       toast.success("Order placed successfully! Redirecting...");
-<<<<<<< Updated upstream
-=======
-      // Redirect to a dedicated order confirmation page with the order ID
->>>>>>> Stashed changes
       router.push(`/order-confirmation/${result.orderId}`);
 
     } catch (error) {
@@ -238,13 +182,8 @@ export default function CheckoutPage() {
     );
   }
 
-<<<<<<< Updated upstream
   // FIX: The component is now strongly typed with FormInputProps instead of any
   const FormInput = ({ id, label, icon: Icon, error, ...props }: FormInputProps) => (
-=======
-  // A reusable input component to keep the form clean
-  const FormInput = ({ id, label, icon: Icon, error, ...props }: any) => (
->>>>>>> Stashed changes
     <div>
       <label htmlFor={id} className="block text-sm font-medium text-gray-300 mb-1">{label}</label>
       <div className="relative">
@@ -265,31 +204,15 @@ export default function CheckoutPage() {
     <div className="min-h-screen bg-gray-900 text-white py-12 px-4 sm:px-6 lg:px-8">
       <Toaster position="top-center" richColors />
       <div className="max-w-6xl mx-auto">
-<<<<<<< Updated upstream
         <h1 className="text-3xl font-bold mb-8 text-center">Secure Checkout</h1>
         <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-5 gap-8 lg:gap-12">
-=======
-        <h1 className="text-3xl font-bold mb-8 text-center">
-          Secure Checkout
-        </h1>
-
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-5 gap-8 lg:gap-12">
-          {/* Left Side: Form */}
->>>>>>> Stashed changes
           <motion.div 
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5 }}
             className="lg:col-span-3 bg-gray-800 p-8 rounded-lg shadow-lg"
           >
-<<<<<<< Updated upstream
             <h2 className="text-2xl font-semibold mb-6 flex items-center gap-3"><UserIcon size={24} />Shipping Information</h2>
-=======
-            <h2 className="text-2xl font-semibold mb-6 flex items-center gap-3">
-              <UserIcon size={24} />
-              Shipping Information
-            </h2>
->>>>>>> Stashed changes
             <div className="space-y-5">
               <FormInput id="fullName" name="fullName" type="text" label="Full Name" placeholder="John Doe" value={formData.fullName} onChange={handleInputChange} error={errors.fullName} icon={UserIcon} />
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -305,10 +228,6 @@ export default function CheckoutPage() {
             </div>
           </motion.div>
 
-<<<<<<< Updated upstream
-=======
-          {/* Right Side: Order Summary */}
->>>>>>> Stashed changes
           <motion.div 
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -316,14 +235,7 @@ export default function CheckoutPage() {
             className="lg:col-span-2"
           >
             <div className="bg-gray-800 rounded-lg p-6 sticky top-6 shadow-lg">
-<<<<<<< Updated upstream
               <h2 className="text-xl font-bold mb-4 flex items-center gap-3"><ShoppingBag size={22} />Order Summary</h2>
-=======
-              <h2 className="text-xl font-bold mb-4 flex items-center gap-3">
-                <ShoppingBag size={22} />
-                Order Summary
-              </h2>
->>>>>>> Stashed changes
               <div className="space-y-3 max-h-60 overflow-y-auto pr-2 mb-4 divide-y divide-gray-700">
                 {cartItems.map(item => (
                   <div key={item._id} className="flex items-center gap-4 pt-3">
