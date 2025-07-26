@@ -34,6 +34,8 @@ export default function CartPage() {
           return;
         }
         if (res.status === 401) {
+          // User is not logged in, show an empty cart.
+          // You could also redirect to /login here.
           setCartItems([]);
           calculateTotal([]);
           return;
@@ -60,9 +62,16 @@ export default function CartPage() {
     if (newQuantity < 1) {
       // If quantity is reduced to 0, treat it as a removal
       removeItem(id);
+<<<<<<< Updated upstream
       return; // FIX: Added a return statement to stop execution here
     };
     
+=======
+      return;
+    };
+    
+    // Optimistic UI update
+>>>>>>> Stashed changes
     const originalCart = [...cartItems];
     const updatedCart = cartItems.map(item => 
       item._id === id ? { ...item, quantity: newQuantity } : item
@@ -86,6 +95,10 @@ export default function CartPage() {
       // The socket error will be caught here. The message is a strong indicator
       // of an external issue (browser extension, firewall).
       toast.error(error instanceof Error ? error.message : 'Failed to update quantity');
+<<<<<<< Updated upstream
+=======
+      // Revert on error
+>>>>>>> Stashed changes
       setCartItems(originalCart);
       calculateTotal(originalCart);
     }
@@ -109,6 +122,10 @@ export default function CartPage() {
     } catch (error) {
       console.error('Remove item error:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to remove item');
+<<<<<<< Updated upstream
+=======
+      // Revert on error
+>>>>>>> Stashed changes
       setCartItems(originalCart);
       calculateTotal(originalCart);
     }
@@ -144,7 +161,7 @@ export default function CartPage() {
             <h2 className="text-2xl font-semibold mb-4">Your cart is empty</h2>
             <p className="text-gray-400 mb-6">Looks like you haven&apos;t added anything to your cart yet.</p>
             <Link 
-              href="/products" 
+              href="/Products" 
               className="inline-block bg-amber-500 hover:bg-amber-600 text-gray-900 font-bold py-3 px-6 rounded-lg transition-colors"
             >
               Browse Products
@@ -237,6 +254,10 @@ export default function CartPage() {
                     <span>${total.toFixed(2)}</span>
                   </div>
                   
+<<<<<<< Updated upstream
+=======
+                  {/* UPDATE: This now links to the checkout page */}
+>>>>>>> Stashed changes
                   <Link href="/checkout" legacyBehavior>
                     <a className="w-full block text-center bg-amber-500 hover:bg-amber-600 text-gray-900 font-bold py-3 px-4 rounded-lg transition-colors mt-6">
                       Proceed to Checkout
