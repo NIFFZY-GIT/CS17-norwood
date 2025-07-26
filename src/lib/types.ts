@@ -1,4 +1,4 @@
-// src/lib/types.ts
+// src/lib/types.ts (Complete and Corrected)
 
 // =================================================================
 // E-COMMERCE & APPLICATION CORE TYPES
@@ -19,10 +19,10 @@ export interface Item {
   currency: 'LKR' | 'USD' | 'EUR' | 'GBP';
   inStock: boolean;
   originalPrice?: number;
-  // --- RECOMMENDATION ATTRIBUTES ---
-  category: 'Snacks' | 'Bites' | 'Drinks' | string; // Base category
-  tags: ('salty' | 'sweet' | 'spicy' | 'healthy' | 'morning' | 'afternoon' | 'night')[]; // Descriptive tags
+  category: 'Snacks' | 'Bites' | 'Drinks' | string;
+  tags: ('salty' | 'sweet' | 'spicy' | 'healthy' | 'morning' | 'afternoon' | 'night')[];
 }
+
 /**
  * Represents the quiz preferences a user can select.
  */
@@ -33,12 +33,13 @@ export interface QuizPrefs {
 }
 
 /**
- * Represents the session data for a logged-in user.
+ * UPDATED: Represents the session data for a logged-in user.
+ * The 'role' property is added to be used for role-based access control (e.g., in the dashboard layout).
  */
 export interface UserSession {
   userId: string;
-  email: string; // Changed from username to email for consistency
-  isAdmin?: boolean;
+  email: string;
+  role: 'admin' | 'user'; // This is more explicit and scalable than isAdmin
 }
 
 /**
@@ -49,13 +50,45 @@ export interface User {
   email: string;
   password?: string;
   createdAt: Date;
-  isAdmin?: boolean;
+  isAdmin?: boolean; // This can remain for your database schema
   preferences?: QuizPrefs;
-  viewHistory?: string[]; // Array of Item _id strings
+  viewHistory?: string[];
+}
+
+/**
+ * ADDED: Represents a complete order object for the admin dashboard.
+ * This includes all necessary shipping details for fulfillment.
+ */
+export interface AdminOrder {
+  _id: string;
+  totalAmount: number;
+  status: 'PENDING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED';
+  createdAt: string;
+  shippingDetails: {
+    fullName: string;
+    email: string;
+    phone: string;
+    address: string;
+    city: string;
+    postalCode: string;
+    country: string;
+  };
+  items: {
+    productId: string;
+    name: string;
+    price: number;
+    quantity: number;
+    image: string;
+  }[];
+  customer: {
+    email: string;
+    username: string;
+    id: string;
+  };
 }
 
 // =================================================================
-// CAREERS & RECRUITMENT TYPES
+// CAREERS & RECRUITMENT TYPES (Unchanged)
 // =================================================================
 
 /**
