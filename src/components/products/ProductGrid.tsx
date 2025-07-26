@@ -2,29 +2,21 @@
 
 import { motion } from 'framer-motion';
 import { Item } from '@/lib/types';
-// Use an absolute path alias for robustness.
-import ModernProductCard  from '@/components/ProductCard';
+import ModernProductCard from '@/components/ProductCard';
 import { PackageSearch } from 'lucide-react';
 
-// MERGED: The interface now includes recommendedItems for the new feature.
 interface ProductGridProps {
   items: Item[];
   recommendedItems: Item[];
   selectedCategory: string;
 }
 
-// MERGED: The component logic is combined, prioritizing the new recommendation feature.
 export function ProductGrid({ items, recommendedItems, selectedCategory }: ProductGridProps) {
-  // Validate inputs to prevent runtime errors (a good practice from the feature branch).
+  // Validate inputs to prevent errors
   const safeItems = Array.isArray(items) ? items : [];
   const safeRecommendedItems = Array.isArray(recommendedItems) ? recommendedItems : [];
 
-  // Determine if the "Recommended" section should be displayed.
-  const showRecommendedSection = selectedCategory === 'All' && safeRecommendedItems.length > 0;
-
-  // MERGED: The "No Items Found" state now correctly checks if there's anything to display.
-  // It only shows if the main list is empty AND the special recommended list isn't being shown.
-  if (safeItems.length === 0 && !showRecommendedSection) {
+  if (safeItems.length === 0 && safeRecommendedItems.length === 0) {
     return (
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -45,12 +37,10 @@ export function ProductGrid({ items, recommendedItems, selectedCategory }: Produ
       animate={{ opacity: 1, transition: { staggerChildren: 0.05 } }}
       className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-10 md:gap-x-8 md:gap-y-12"
     >
-      {/* RENDER RECOMMENDED ITEMS: This section from the feature branch is included. */}
-      {/* It's only displayed for the 'All' category. */}
-      {showRecommendedSection && (
+      {/* Show "Others Also Liked" only when selectedCategory is 'All' */}
+      {selectedCategory === 'All' && safeRecommendedItems.length > 0 && (
         <>
           <div className="col-span-full">
-            {/* An optional title for the section, can be enabled if needed. */}
             {/* <h3 className="text-2xl font-bold text-white mb-4">Others Also Liked</h3> */}
           </div>
           {safeRecommendedItems.map((item, index) => {
@@ -60,7 +50,7 @@ export function ProductGrid({ items, recommendedItems, selectedCategory }: Produ
             }
             return (
               <ModernProductCard
-                key={`rec-${item._id}`} // Prefixed key to avoid potential conflicts
+                key={item._id}
                 item={item}
                 index={index}
               />
@@ -68,24 +58,21 @@ export function ProductGrid({ items, recommendedItems, selectedCategory }: Produ
           })}
         </>
       )}
-
-      {/* RENDER MAIN ITEMS: This renders the standard list of items. */}
       {safeItems.map((item, index) => {
         if (!item?._id) {
           console.warn('Item missing _id:', item);
           return null;
         }
-        
-        // Note: The original branch had an unused `isRecommended` check here, which has been removed for clarity.
-        // If duplicate items are a concern, `safeItems` can be filtered to exclude items
-        // already rendered in the recommended section.
-        
+        // Check if the item is in recommendedItems to apply highlight
+        const isRecommended = safeRecommendedItems.some((recItem) => {
+          if (!recItem?._id) return false;
+          return recItem._id.toString() === item._id.toString();
+        });
         return (
           <ModernProductCard
             key={item._id}
             item={item}
-            // The animation index is offset to ensure a continuous stagger effect.
-            index={index + (showRecommendedSection ? safeRecommendedItems.length : 0)}
+            index={index + (selectedCategory === 'All' ? safeRecommendedItems.length : 0)} // Adjust index based on whether recommended items are shown
           />
         );
       })}
