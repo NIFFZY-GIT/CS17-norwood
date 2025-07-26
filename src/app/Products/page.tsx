@@ -44,115 +44,9 @@ function HeroSection() {
   );
 }
 
-interface CollaborativeRecommendationProps {
-  items: Item[];
-}
-
-function OthersAlsoLikedSection({ items }: CollaborativeRecommendationProps) {
-  const [recommendedItems, setRecommendedItems] = useState<Item[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchRecommendations = async () => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const res = await fetch('/api/recommendation', {
-          headers: { Accept: 'application/json' },
-        });
-        const text = await res.text();
-        console.log('Raw API response:', text.substring(0, 200));
-        if (!res.ok) {
-          try {
-            const errorData = JSON.parse(text);
-            throw new Error(errorData.error || `HTTP error ${res.status}`);
-          } catch (parseError) {
-            throw new Error(`Non-JSON response from /api/recommendations: ${text.substring(0, 100)}...`);
-          }
-        }
-        const data: Item[] = JSON.parse(text);
-        if (!Array.isArray(data)) {
-          console.warn('Unexpected API response format:', data);
-          setRecommendedItems(items.filter((item) => item.inStock && item.category === 'Bites').slice(0, 4));
-        } else {
-          setRecommendedItems(data);
-        }
-      } catch (err: unknown) {
-        const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
-        console.error('Fetch recommendations error:', err);
-        setError(errorMessage);
-        setRecommendedItems(items.filter((item) => item.inStock && item.category === 'Bites').slice(0, 4));
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchRecommendations();
-  }, [items]);
-
-  const containerVariants = { hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.1 } } };
-  const itemVariants = { hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 1, transition: { ease: 'easeOut', duration: 0.5 } } };
-
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center h-48">
-        <Loader2 className="animate-spin text-amber-500" size={48} />
-      </div>
-    );
-  }
-
-  if (error) {
-    console.log('Displaying error with fallback items:', recommendedItems.map((item) => item.name));
-    // Proceed to display fallback items
-  }
-
-  if (!recommendedItems.length) {
-    return (
-      <div className="text-center py-12 px-8 bg-gray-800/50 rounded-xl">
-        <p className="text-slate-400">No recommendations available at the moment.</p>
-      </div>
-    );
-  }
-
-  return (
-    <motion.div initial="hidden" animate="visible" variants={containerVariants} className="mt-16">
-      <motion.h2 variants={itemVariants} className="text-3xl md:text-4xl font-bold text-white mb-6">
-        Others Also Liked
-      </motion.h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {recommendedItems.map((item) => (
-          <Link href={`/Products/${item._id}`} key={item._id} className="block">
-            <motion.div
-              variants={itemVariants}
-              className="bg-gray-800/50 rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow cursor-pointer"
-            >
-              <div className="relative h-48">
-                <NextImage
-                  src={item.imageBase64}
-                  alt={item.name}
-                  fill
-                  style={{ objectFit: 'cover' }}
-                  className="transition-transform hover:scale-105"
-                  unoptimized
-                />
-              </div>
-              <div className="p-4">
-                <h3 className="text-lg font-semibold text-white">{item.name}</h3>
-                <p className="text-sm text-slate-400">{item.description}</p>
-                <p className="mt-2 text-amber-400 font-bold">
-                  {new Intl.NumberFormat('en-US', { style: 'currency', currency: item.currency }).format(item.price)}
-                </p>
-              </div>
-            </motion.div>
-          </Link>
-        ))}
-      </div>
-    </motion.div>
-  );
-}
-
 export default function ProductsPage() {
   const [allItems, setAllItems] = useState<Item[]>([]);
+  const [recommendedItems, setRecommendedItems] = useState<Item[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -175,6 +69,15 @@ export default function ProductsPage() {
         }
         const data: Item[] = JSON.parse(text);
         setAllItems(Array.isArray(data) ? data : []);
+
+        const recommendationsRes = await fetch("/api/recommendation");
+        if (!recommendationsRes.ok) {
+          console.error('Failed to fetch recommendations:', await recommendationsRes.json());
+          setRecommendedItems([]);
+        } else {
+          const recommendationsData: Item[] = await recommendationsRes.json();
+          setRecommendedItems(Array.isArray(recommendationsData) ? recommendationsData : []);
+        }
       } catch (err: unknown) {
         const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
         console.error('Fetch items error:', err);
@@ -205,7 +108,6 @@ export default function ProductsPage() {
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-28">
         <HeroSection />
         <RecommendedSection />
-        <OthersAlsoLikedSection items={allItems} />
 
         <div className="my-16 h-px w-full bg-gradient-to-r from-transparent via-gray-700 to-transparent"></div>
 
@@ -227,7 +129,11 @@ export default function ProductsPage() {
                 <p>{error}</p>
               </div>
             ) : (
-              <ProductGrid items={filteredItems} selectedCategory={selectedCategory} />
+              <ProductGrid 
+                items={filteredItems} 
+                recommendedItems={recommendedItems}
+                selectedCategory={selectedCategory}
+              />
             )}
           </main>
         </div>
