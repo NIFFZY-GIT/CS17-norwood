@@ -9,6 +9,7 @@ import { Briefcase, FileText } from "lucide-react";
 const navItems = [
   { href: '/dashboard', label: 'Overview', icon: LayoutDashboard },
   { href: '/dashboard/items', label: 'My Items', icon: Package },
+  { href: '/dashboard/orders', label: 'My Orders', icon: Package },
   { href: '/dashboard/analytics', label: 'Analytics', icon: BarChart3 },
   { href: '/dashboard/settings', label: 'Settings', icon: Settings },
     { href: '/dashboard/vacancies', label: 'Vacancies', icon: Briefcase },

@@ -1,45 +1,69 @@
 // app/api/cart/route.ts
-import { NextResponse } from 'next/server';
-import { MongoClient, ObjectId } from 'mongodb';
+import { NextResponse, NextRequest } from 'next/server';
+import { ObjectId } from 'mongodb';
 import { getSession } from '@/lib/session';
+import clientPromise from '@/lib/mongodb'; // <-- IMPORT THE UTILITY
 
-const uri = process.env.MONGODB_URI!;
-const client = new MongoClient(uri);
+const DB_NAME = 'norwooddb';
+const CART_COLLECTION = 'cart';
 
+// --- GET /api/cart ---
+export async function GET() {
+  try {
+    const session = await getSession();
+    if (!session?.userId) {
+      // User not logged in, return an empty cart. This is fine.
+      return NextResponse.json([]);
+    }
+
+    const client = await clientPromise;
+    const db = client.db(DB_NAME);
+    
+    const cartItems = await db.collection(CART_COLLECTION).find({ 
+      userId: new ObjectId(session.userId) 
+    }).toArray();
+    
+    // Serialize ObjectIds to strings for the client
+    const serializedItems = cartItems.map(item => ({
+      ...item,
+      _id: item._id.toString(),
+      productId: item.productId.toString(),
+      userId: item.userId.toString()
+    }));
+    
+    return NextResponse.json(serializedItems);
+  } catch (error) {
+    console.error('[CART_GET_ERROR]', error);
+    return NextResponse.json({ error: 'Failed to fetch cart' }, { status: 500 });
+  }
+}
+
+// --- POST /api/cart ---
+// Note: This function wasn't in your original file but is good practice for adding new items.
 export async function POST(request: Request) {
   try {
     const session = await getSession();
     if (!session?.userId) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { productId, quantity, name, price, image } = await request.json();
     
-    await client.connect();
-    const db = client.db('norwooddb');
-    const cartCollection = db.collection('cart');
+    const client = await clientPromise;
+    const db = client.db(DB_NAME);
     
-    // Check if item already exists in cart for this user
-    const existingItem = await cartCollection.findOne({ 
+    const existingItem = await db.collection(CART_COLLECTION).findOne({ 
       userId: new ObjectId(session.userId),
       productId: new ObjectId(productId) 
     });
     
     if (existingItem) {
-      // Update quantity if item exists
-      await cartCollection.updateOne(
-        { 
-          userId: new ObjectId(session.userId),
-          productId: new ObjectId(productId) 
-        },
-        { $inc: { quantity } }
+      await db.collection(CART_COLLECTION).updateOne(
+        { _id: existingItem._id },
+        { $inc: { quantity: quantity }, $set: { updatedAt: new Date() } }
       );
     } else {
-      // Add new item to cart
-      await cartCollection.insertOne({
+      await db.collection(CART_COLLECTION).insertOne({
         userId: new ObjectId(session.userId),
         productId: new ObjectId(productId),
         quantity,
@@ -51,134 +75,82 @@ export async function POST(request: Request) {
       });
     }
     
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, message: 'Cart updated' });
   } catch (error) {
-    console.error('Cart API error:', error);
-    return NextResponse.json(
-      { error: 'Failed to update cart' },
-      { status: 500 }
-    );
-  } finally {
-    await client.close();
+    console.error('[CART_POST_ERROR]', error);
+    return NextResponse.json({ error: 'Failed to update cart' }, { status: 500 });
   }
 }
 
-export async function GET() {
-  try {
-    const session = await getSession();
-    
-    // If no session, return empty array (not an error)
-    if (!session?.userId) {
-      return NextResponse.json([], { status: 200 });
-    }
 
-    await client.connect();
-    const db = client.db('norwooddb');
-    const cartCollection = db.collection('cart');
-    
-    const cartItems = await cartCollection.find({ 
-      userId: new ObjectId(session.userId) 
-    }).toArray();
-    
-    const serializedItems = cartItems.map(item => ({
-      ...item,
-      _id: item._id.toString(),
-      productId: item.productId.toString(),
-      userId: item.userId.toString()
-    }));
-    
-    return NextResponse.json(serializedItems);
-  } catch (error) {
-    console.error('GET Error:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch cart' },
-      { status: 500 }
-    );
-  } finally {
-    await client.close();
-  }
-}
-
-export async function PUT(request: Request) {
+// --- PUT /api/cart?id=<itemId> ---
+export async function PUT(request: NextRequest) {
   try {
     const session = await getSession();
     if (!session?.userId) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
     const { quantity } = await request.json();
     
-    if (!id) throw new Error('Missing item ID');
+    if (!id) {
+      return NextResponse.json({ error: 'Missing item ID' }, { status: 400 });
+    }
     
-    await client.connect();
-    const db = client.db('norwooddb');
-    const cartCollection = db.collection('cart');
+    const client = await clientPromise;
+    const db = client.db(DB_NAME);
     
-    const result = await cartCollection.updateOne(
+    const result = await db.collection(CART_COLLECTION).updateOne(
       { 
         _id: new ObjectId(id),
-        userId: new ObjectId(session.userId) 
+        userId: new ObjectId(session.userId) // Security check
       },
       { $set: { quantity: quantity, updatedAt: new Date() } }
     );
     
     if (result.matchedCount === 0) {
-      throw new Error('Item not found in cart');
+      return NextResponse.json({ error: 'Item not found or you do not have permission to edit it' }, { status: 404 });
     }
     
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, message: 'Item updated' });
   } catch (error) {
-    console.error('PUT Error:', error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to update cart item' },
-      { status: 500 }
-    );
-  } finally {
-    await client.close();
+    console.error('[CART_PUT_ERROR]', error);
+    return NextResponse.json({ error: 'Failed to update cart item' }, { status: 500 });
   }
 }
 
-export async function DELETE(request: Request) {
+// --- DELETE /api/cart?id=<itemId> ---
+export async function DELETE(request: NextRequest) {
   try {
     const session = await getSession();
     if (!session?.userId) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
     
-    if (!id) throw new Error('Missing item ID');
+    if (!id) {
+        return NextResponse.json({ error: 'Missing item ID' }, { status: 400 });
+    }
     
-    await client.connect();
-    const db = client.db('norwooddb');
-    const cartCollection = db.collection('cart');
+    const client = await clientPromise;
+    const db = client.db(DB_NAME);
     
-    const result = await cartCollection.deleteOne({ 
+    const result = await db.collection(CART_COLLECTION).deleteOne({ 
       _id: new ObjectId(id),
-      userId: new ObjectId(session.userId) 
+      userId: new ObjectId(session.userId) // Security check
     });
     
     if (result.deletedCount === 0) {
-      throw new Error('Item not found in cart');
+      return NextResponse.json({ error: 'Item not found or you do not have permission to delete it' }, { status: 404 });
     }
     
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, message: 'Item removed' });
   } catch (error) {
-    console.error('DELETE Error:', error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to remove cart item' },
-      { status: 500 }
-    );
-  } finally {
-    await client.close();
+    console.error('[CART_DELETE_ERROR]', error);
+    return NextResponse.json({ error: 'Failed to remove cart item' }, { status: 500 });
   }
 }
