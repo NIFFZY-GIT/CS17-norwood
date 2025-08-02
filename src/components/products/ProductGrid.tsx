@@ -75,7 +75,6 @@ export function ProductGrid({ items, recommendedItems, selectedCategory }: Produ
             index={index + (selectedCategory === 'All' ? safeRecommendedItems.length : 0)}
             isRecommended={isRecommended}
             isFirstRowRecommended={false}
-            isFirstRow={index < 3} // Only first 3 items get purple styling
           />
         );
       })}

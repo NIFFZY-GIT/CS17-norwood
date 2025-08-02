@@ -21,7 +21,6 @@ interface ModernProductCardProps {
   index: number;
   isRecommended?: boolean;
   isFirstRowRecommended?: boolean;
-  isFirstRow?: boolean;
 }
 
 // The onAddToCart function has been removed from the component's parameters
@@ -30,7 +29,6 @@ const ModernProductCard = ({
   index,
   isRecommended = false,
   isFirstRowRecommended = false,
-  isFirstRow = false,
 }: ModernProductCardProps) => {
   const cardVariants = {
     hidden: { opacity: 0, y: 50, scale: 0.95 },
@@ -60,11 +58,9 @@ const ModernProductCard = ({
         aria-label={`View details for ${item.name || 'product'}`}
       >
         <div
-          className={`group relative flex flex-col backdrop-blur-lg border rounded-xl shadow-lg overflow-hidden transition-all duration-300 ease-out hover:shadow-xl hover:shadow-black/40 hover:ring-1 h-full ${
-            isFirstRow 
-              ? 'bg-gradient-to-br from-purple-900/40 to-blue-900/40 border-purple-400/60 hover:ring-purple-500/60' 
-              : `bg-black/30 ${isRecommended ? 'border-amber-400 border-2' : 'border-slate-700/50'} hover:ring-amber-500/60`
-          } ${
+          className={`group relative flex flex-col backdrop-blur-lg border rounded-xl shadow-lg overflow-hidden transition-all duration-300 ease-out hover:shadow-xl hover:shadow-black/40 hover:ring-1 h-full bg-black/30 ${
+            isRecommended ? 'border-amber-400 border-2' : 'border-slate-700/50'
+          } hover:ring-amber-500/60 ${
             isFirstRowRecommended ? 'bg-gradient-to-b from-amber-500/10 to-transparent' : ''
           }`}
         >
@@ -85,8 +81,6 @@ const ModernProductCard = ({
                 <span className="bg-amber-500/90 text-slate-900 text-xs font-bold px-2.5 py-1 rounded-full shadow-md">On Sale</span>
               ) : isRecommended ? (
                 <span className="bg-amber-400/90 text-slate-900 text-xs font-bold px-2.5 py-1 rounded-full shadow-md">Recommended</span>
-              ) : isFirstRow ? (
-                <span className="bg-purple-500/90 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-md">Featured</span>
               ) : null}
             </div>
           </div>
@@ -114,7 +108,7 @@ const ModernProductCard = ({
                     {formatCurrency(item.originalPrice, item.currency)}
                   </span>
                 )}
-                <span className={`text-xl font-bold ${isFirstRow ? 'text-purple-400' : 'text-amber-400'}`}>
+                <span className="text-xl font-bold text-amber-400">
                   {formatCurrency(item.price, item.currency)}
                 </span>
               </div>
