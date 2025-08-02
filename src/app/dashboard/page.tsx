@@ -1,6 +1,5 @@
 import { getSession } from '@/lib/session';
 import AnalyticsChart from '@/components/dashboard/AnalyticsChart';
-import { UserSession } from '@/lib/types';
 import { Package, Users, BarChartBig, ArrowUpRight } from 'lucide-react';
 import clientPromise from '@/lib/mongodb'; // Import the MongoDB client
 
@@ -41,9 +40,14 @@ async function getDashboardStats() {
 export default async function DashboardOverviewPage() {
   // Fetch session and stats concurrently for a small performance boost
   const [session, stats] = await Promise.all([
-    getSession() as Promise<UserSession>,
+    getSession(),
     getDashboardStats()
   ]);
+
+  if (!session) {
+    // Handle case where session is null - redirect should be handled by middleware
+    return null;
+  }
 
   return (
     <>

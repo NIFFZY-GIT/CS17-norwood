@@ -10,10 +10,10 @@ const ORDERS_COLLECTION = 'orders';
 // GET handler for fetching a specific order
 export async function GET(
   request: NextRequest,
-  { params }: { params: { orderId: string } }
+  { params }: { params: Promise<{ orderId: string }> }
 ) {
   try {
-    const { orderId } = params;
+    const { orderId } = await params;
 
     // Validate orderId format
     if (!ObjectId.isValid(orderId)) {
@@ -41,7 +41,7 @@ export async function GET(
 // --- PUT handler for an admin to update an order's status ---
 export async function PUT(
   request: NextRequest, 
-  { params }: { params: { orderId: string } }
+  { params }: { params: Promise<{ orderId: string }> }
 ) {
   try {
     const session = await getSession();
@@ -49,7 +49,7 @@ export async function PUT(
       return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
     }
 
-    const { orderId } = params;
+    const { orderId } = await params;
     const { status } = await request.json();
     
     // Validate status to prevent arbitrary data injection
@@ -80,7 +80,7 @@ export async function PUT(
 // --- DELETE handler for an admin to delete an order ---
 export async function DELETE(
   request: NextRequest, 
-  { params }: { params: { orderId: string } }
+  { params }: { params: Promise<{ orderId: string }> }
 ) {
   try {
     const session = await getSession();
@@ -88,7 +88,7 @@ export async function DELETE(
       return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
     }
 
-    const { orderId } = params;
+    const { orderId } = await params;
 
     const client = await clientPromise;
     const db = client.db(DB_NAME);

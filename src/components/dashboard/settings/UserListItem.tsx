@@ -25,7 +25,7 @@ export default function UserListItem({ user, currentUserId, onDelete }: UserList
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">
-            {user.username} {user._id === currentUserId && "(You)"}
+            {user.username || user.email} {user._id === currentUserId && "(You)"}
           </p>
           {user.email && (
             <p className="text-xs text-slate-500 dark:text-slate-400 truncate flex items-center">
@@ -39,9 +39,9 @@ export default function UserListItem({ user, currentUserId, onDelete }: UserList
         {/* Delete button shown based on canDeleteThisUser logic */}
         {canDeleteThisUser && (
           <button
-            onClick={() => onDelete(user._id, user.username)}
+            onClick={() => onDelete(user._id, user.username || user.email)}
             className="inline-flex items-center p-2 border border-transparent rounded-full shadow-sm text-red-600 hover:bg-red-100 dark:hover:bg-red-700/50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors"
-            title={`Delete user ${user.username}`}
+            title={`Delete user ${user.username || user.email}`}
           >
             <Trash2 className="h-4 w-4 sm:h-5 sm:w-5" />
           </button>

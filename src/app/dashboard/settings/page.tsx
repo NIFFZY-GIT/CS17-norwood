@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 // FIX 1: The unused 'getSession' import is removed.
-import { User, UserSession } from '@/lib/types';
+import { User } from '@/lib/types';
+import { SessionData } from '@/lib/session';
 import UserListItem from '@/components/dashboard/settings/UserListItem';
 import CreateUserModal from '@/components/dashboard/settings/CreateUserModal';
 import { PlusCircle, Users, Loader2, ShieldAlert } from 'lucide-react';
@@ -12,7 +13,7 @@ export default function SettingsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [currentSession, setCurrentSession] = useState<UserSession | null>(null);
+  const [currentSession, setCurrentSession] = useState<SessionData | null>(null);
 
   useEffect(() => {
     // A simple function to get session data on the client if needed

@@ -4,11 +4,11 @@ import { useState, ReactNode } from 'react';
 import Link from 'next/link';
 import Sidebar from '@/components/dashboard/Sidebar';
 import { Menu as MenuIcon } from 'lucide-react';
-import { UserSession } from '@/lib/types';
+import { SessionData } from '@/lib/session';
 
 interface DashboardLayoutProps {
   children: ReactNode;
-  session: UserSession | null; // Session is a required prop
+  session: SessionData | null; // Session is a required prop
 }
 
 export default function DashboardLayout({ children, session }: DashboardLayoutProps) {
