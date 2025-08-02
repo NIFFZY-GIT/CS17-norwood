@@ -1,14 +1,13 @@
 import { getSession } from '@/lib/session'; // Your server-side session function
 import { redirect } from 'next/navigation';
 import DashboardLayoutComponent from '@/components/dashboard/DashboardLayout'; // A better name
-import { UserSession } from '@/lib/types';
 
 export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const session = await getSession() as UserSession | null;
+  const session = await getSession();
 
   if (!session?.userId) {
     redirect('/login');

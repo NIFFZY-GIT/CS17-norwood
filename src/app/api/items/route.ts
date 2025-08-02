@@ -75,6 +75,7 @@ export async function POST(request: NextRequest) {
       originalPrice: originalPrice || undefined,
       // FIX: Add 'category' to the object being inserted into the database.
       category,
+      tags: [], // Add missing tags property
       userId: session.userId,
       createdAt: new Date(),
     };

@@ -84,7 +84,7 @@ export async function GET(request: Request) {
         .map(id => {
           try {
             return new ObjectId(id);
-          } catch (e) {
+          } catch {
             console.warn('Invalid ObjectId:', id);
             return null;
           }

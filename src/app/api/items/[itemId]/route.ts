@@ -6,7 +6,7 @@ import { ObjectId } from 'mongodb';
 
 // Define the interface for the route context params
 interface RouteParams {
-  params: { itemId: string };
+  params: Promise<{ itemId: string }>;
 }
 
 interface ItemFromDB extends Omit<Item, '_id'> {
@@ -18,7 +18,7 @@ export async function GET(
   request: NextRequest,
   { params }: RouteParams // Use the explicit RouteParams interface
 ) {
-  const { itemId } = params;
+  const { itemId } = await params;
 
   if (!ObjectId.isValid(itemId)) {
     return NextResponse.json({ message: 'Invalid item ID format' }, { status: 400 });
@@ -54,7 +54,7 @@ export async function PUT(
   request: NextRequest,
   { params }: RouteParams // Use the explicit RouteParams interface
 ) {
-  const { itemId } = params;
+  const { itemId } = await params;
   const session = await getSession();
   if (!session?.userId) return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   if (!ObjectId.isValid(itemId)) return NextResponse.json({ message: 'Invalid item ID' }, { status: 400 });
@@ -111,7 +111,7 @@ export async function DELETE(
   request: NextRequest,
   { params }: RouteParams // Use the explicit RouteParams interface
 ) {
-  const { itemId } = params;
+  const { itemId } = await params;
   const session = await getSession();
   if (!session?.userId) return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   if (!ObjectId.isValid(itemId)) return NextResponse.json({ message: 'Invalid item ID format' }, { status: 400 });

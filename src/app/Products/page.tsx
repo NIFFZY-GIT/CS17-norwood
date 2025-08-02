@@ -8,8 +8,6 @@ import { Toaster } from 'sonner';
 import { RecommendedSection } from '@/components/products/RecommendedSection';
 import { CategorySidebar } from '@/components/products/CategorySidebar';
 import { ProductGrid } from '@/components/products/ProductGrid';
-import NextImage from 'next/image';
-import Link from 'next/link';
 
 function HeroSection() {
   const heroTextVariants = { initial: { opacity: 0, y: 20 }, animate: { opacity: 1, y: 0, transition: { duration: 0.6, ease: 'circOut' } } };
@@ -63,7 +61,7 @@ export default function ProductsPage() {
           try {
             const errorData = JSON.parse(text);
             throw new Error(errorData.message || `HTTP error ${res.status}`);
-          } catch (parseError) {
+          } catch {
             throw new Error(`Non-JSON response from /api/items: ${text.substring(0, 100)}...`);
           }
         }

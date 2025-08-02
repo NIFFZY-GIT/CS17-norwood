@@ -72,7 +72,9 @@ export function ProductGrid({ items, recommendedItems, selectedCategory }: Produ
           <ModernProductCard
             key={item._id}
             item={item}
-            index={index + (selectedCategory === 'All' ? safeRecommendedItems.length : 0)} // Adjust index based on whether recommended items are shown
+            index={index + (selectedCategory === 'All' ? safeRecommendedItems.length : 0)}
+            isRecommended={isRecommended}
+            isFirstRowRecommended={false}
           />
         );
       })}
