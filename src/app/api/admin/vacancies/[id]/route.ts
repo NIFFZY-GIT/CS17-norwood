@@ -4,7 +4,7 @@ import { ObjectId } from 'mongodb';
 
 const getDb = async () => {
     const client = await clientPromise;
-    return client.db(process.env.DB_NAME);
+    return client.db(process.env.MONGODB_DB_NAME);
 };
 
 // PUT (update) an existing vacancy

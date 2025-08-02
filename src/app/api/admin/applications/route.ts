@@ -13,7 +13,7 @@ export async function GET() {
 
   try {
     const client = await clientPromise;
-    const db: Db = client.db(process.env.DB_NAME);
+    const db: Db = client.db(process.env.MONGODB_DB_NAME);
 
     const applications = await db
       .collection('applications')

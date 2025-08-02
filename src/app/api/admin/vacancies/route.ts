@@ -3,7 +3,7 @@ import clientPromise from '@/lib/mongodb';
 
 const getDb = async () => {
     const client = await clientPromise;
-    return client.db(process.env.DB_NAME);
+    return client.db(process.env.MONGODB_DB_NAME);
 };
 
 // GET all vacancies
