@@ -6,7 +6,7 @@ import { Db } from 'mongodb';
 export async function GET() {
   try {
     const client = await clientPromise;
-    const db: Db = client.db(process.env.DB_NAME);
+    const db: Db = client.db(process.env.MONGODB_DB_NAME);
 
     // Find all vacancies in the collection that are marked as active.
     // This prevents inactive or draft jobs from showing on the public site.

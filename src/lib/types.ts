@@ -4,9 +4,6 @@
 // E-COMMERCE & APPLICATION CORE TYPES
 // =================================================================
 
-/**
- * Represents a product/item in your store.
- */
 export interface Item {
   _id: string;
   name: string;

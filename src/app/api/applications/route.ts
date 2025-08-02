@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
     // Save to database
     const client = await clientPromise;
     // The type for 'db' is now inferred by TypeScript, so no need for explicit 'Db' type.
-    const db = client.db(process.env.DB_NAME); 
+    const db = client.db(process.env.MONGODB_DB_NAME); 
     const result = await db.collection('applications').insertOne({
         ...newApplication,
         createdAt: new Date(),
