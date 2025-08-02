@@ -44,10 +44,9 @@ export async function GET() {
 
         const users: User[] = dbUsers.map(dbUser => ({
             _id: dbUser._id.toString(),
-            username: dbUser.username,
-            email: dbUser.email,
+            email: dbUser.email || '',
             createdAt: dbUser.createdAt,
-            isAdmin: dbUser.isAdmin,
+            isAdmin: dbUser.isAdmin || false,
         }));
 
         return NextResponse.json(users);
@@ -131,10 +130,9 @@ export async function POST(request: NextRequest) {
 
         const createdUser: User = {
             _id: result.insertedId.toString(), // result.insertedId will be an ObjectId
-            username: newUserToInsert.username,
-            email: newUserToInsert.email,
+            email: newUserToInsert.email || '',
             createdAt: newUserToInsert.createdAt,
-            isAdmin: newUserToInsert.isAdmin,
+            isAdmin: newUserToInsert.isAdmin || false,
         };
 
         return NextResponse.json(createdUser, { status: 201 });
