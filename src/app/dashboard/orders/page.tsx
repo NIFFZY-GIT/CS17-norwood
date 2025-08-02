@@ -17,21 +17,43 @@ export default function OrdersPage() {
 
   useEffect(() => {
     // ... (fetch logic remains the same)
-    const fetchOrders = async () => {
-      setIsLoading(true);
-      setError(null);
+    // ...existing code...
+const fetchOrders = async () => {
+  setIsLoading(true);
+  setError(null);
+  try {
+    const res = await fetch('/api/orders');
+    
+    if (!res.ok) {
+      // Try to get error message, but handle cases where response isn't JSON
+      let errorMessage = 'Failed to fetch orders';
       try {
-        const res = await fetch('/api/orders');
-        if (!res.ok) throw new Error((await res.json()).message || 'Failed to fetch orders');
-        setOrders(await res.json());
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
-        setError(errorMessage);
-        toast.error(errorMessage);
-      } finally {
-        setIsLoading(false);
+        const errorData = await res.json();
+        errorMessage = errorData.message || errorMessage;
+      } catch {
+        // If parsing fails, use the status text or default message
+        errorMessage = `HTTP ${res.status}: ${res.statusText || 'Failed to fetch orders'}`;
       }
-    };
+      throw new Error(errorMessage);
+    }
+    
+    // Check if response has content before parsing
+    const text = await res.text();
+    if (!text) {
+      throw new Error('Empty response from server');
+    }
+    
+    const data = JSON.parse(text);
+    setOrders(data);
+  } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
+    setError(errorMessage);
+    toast.error(errorMessage);
+  } finally {
+    setIsLoading(false);
+  }
+};
+// ...existing code...
     fetchOrders();
   }, []);
 

@@ -1,6 +1,7 @@
 // src/app/order-confirmation/[orderId]/page.tsx
 'use client';
 
+import { use } from 'react';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -33,8 +34,8 @@ interface Order {
     createdAt: string;
 }
 
-export default function OrderConfirmationPage({ params }: { params: { orderId: string } }) {
-    const { orderId } = params;
+export default function OrderConfirmationPage({ params }: { params: Promise<{ orderId: string }> }) {
+  const { orderId } = use(params);
     const [order, setOrder] = useState<Order | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -48,10 +49,25 @@ export default function OrderConfirmationPage({ params }: { params: { orderId: s
             try {
                 const res = await fetch(`/api/orders/${orderId}`);
                 if (!res.ok) {
-                    const errorData = await res.json();
-                    throw new Error(errorData.error || 'Failed to fetch order details.');
+                    // Try to get error message, but handle cases where response isn't JSON
+                    let errorMessage = 'Failed to fetch order details.';
+                    try {
+                        const errorData = await res.json();
+                        errorMessage = errorData.error || errorMessage;
+                    } catch {
+                        // If parsing fails, use the status text or default message
+                        errorMessage = `HTTP ${res.status}: ${res.statusText || 'Failed to fetch order details.'}`;
+                    }
+                    throw new Error(errorMessage);
                 }
-                const data: Order = await res.json();
+                
+                // Check if response has content before parsing
+                const text = await res.text();
+                if (!text) {
+                    throw new Error('Empty response from server');
+                }
+                
+                const data: Order = JSON.parse(text);
                 setOrder(data);
             } catch (err) {
                 console.error(err);
