@@ -4,15 +4,32 @@ import { MongoClient, ObjectId } from 'mongodb';
 const uri = process.env.MONGODB_URI || 'mongodb://localhost:27017';
 const client = new MongoClient(uri);
 
+// Cache for co-occurrence matrix (cache for 5 minutes)
+let cachedCoOccurrence: { [key: string]: { [key: string]: number } } | null = null;
+let cacheExpiry = 0;
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
 async function getCartCoOccurrences() {
+  // Check cache first
+  const now = Date.now();
+  if (cachedCoOccurrence && now < cacheExpiry) {
+    console.log('Using cached co-occurrence matrix');
+    return cachedCoOccurrence;
+  }
+
   try {
+    console.log('Computing fresh co-occurrence matrix');
     await client.connect();
     const db = client.db('norwooddb'); 
     const carts = await db.collection('carts').find({}).toArray();
 
     if (!carts.length) {
       console.log('No cart entries found');
-      return {};
+      const emptyMatrix = {};
+      // Cache empty result too
+      cachedCoOccurrence = emptyMatrix;
+      cacheExpiry = now + CACHE_DURATION;
+      return emptyMatrix;
     }
 
     // Group carts by user to find products purchased together
@@ -48,6 +65,11 @@ async function getCartCoOccurrences() {
       }
     }
     console.log('Co-occurrence matrix:', JSON.stringify(coOccurrence, null, 2));
+    
+    // Cache the result
+    cachedCoOccurrence = coOccurrence;
+    cacheExpiry = now + CACHE_DURATION;
+    
     return coOccurrence;
   } catch (error) {
     console.error('Error in getCartCoOccurrences:', error);
@@ -67,9 +89,10 @@ export async function GET(request: Request) {
     const coOccurrence = await getCartCoOccurrences();
     let recommendations: string[] = [];
 
-    if (productId && coOccurrence[productId]) {
-      recommendations = Object.keys(coOccurrence[productId])
-        .sort((a, b) => coOccurrence[productId][b] - coOccurrence[productId][a])
+    if (productId && coOccurrence && productId in coOccurrence) {
+      const productCoOccurrences = (coOccurrence as { [key: string]: { [key: string]: number } })[productId];
+      recommendations = Object.keys(productCoOccurrences)
+        .sort((a, b) => productCoOccurrences[b] - productCoOccurrences[a])
         .slice(0, 4);
       console.log('[2025-07-10 09:39 AM +0530] Recommendations for', productId, ':', recommendations);
     } else {

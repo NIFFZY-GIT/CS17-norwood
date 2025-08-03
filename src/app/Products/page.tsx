@@ -54,20 +54,21 @@ export default function ProductsPage() {
       setIsLoading(true);
       setError(null);
       try {
-        const res = await fetch('/api/items', { headers: { Accept: 'application/json' } });
-        const text = await res.text();
-        console.log('Raw /api/items response:', text.substring(0, 200));
+        // Fetch items without images first for faster initial load
+        const res = await fetch('/api/items?includeImages=false&limit=50', { 
+          headers: { Accept: 'application/json' } 
+        });
+        
         if (!res.ok) {
-          try {
-            const errorData = JSON.parse(text);
-            throw new Error(errorData.message || `HTTP error ${res.status}`);
-          } catch {
-            throw new Error(`Non-JSON response from /api/items: ${text.substring(0, 100)}...`);
-          }
+          const errorData = await res.json();
+          throw new Error(errorData.message || `HTTP error ${res.status}`);
         }
-        const data: Item[] = JSON.parse(text);
-        setAllItems(Array.isArray(data) ? data : []);
 
+        const data = await res.json();
+        const items = data.items || data; // Handle both old and new response format
+        setAllItems(Array.isArray(items) ? items : []);
+
+        // Fetch recommendations in parallel
         const recommendationsRes = await fetch("/api/recommendation");
         if (!recommendationsRes.ok) {
           console.error('Failed to fetch recommendations:', await recommendationsRes.json());
