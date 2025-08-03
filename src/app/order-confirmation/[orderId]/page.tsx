@@ -129,7 +129,19 @@ export default function OrderConfirmationPage({ params }: { params: Promise<{ or
                         <div className="space-y-4">
                             {order.items.map(item => (
                                 <div key={item.productId} className="flex gap-4 items-center">
-                                    <Image src={item.image || '/placeholder-image.png'} alt={item.name} width={64} height={64} className="rounded-md object-cover bg-gray-700"/>
+                                    <div className="w-16 h-16 relative rounded-md overflow-hidden bg-gray-700">
+                                        <Image 
+                                            src={item.image && item.image.startsWith('data:') ? item.image : '/placeholder-image.png'} 
+                                            alt={item.name} 
+                                            width={64} 
+                                            height={64} 
+                                            className="object-cover w-full h-full"
+                                            onError={(e) => {
+                                                const target = e.target as HTMLImageElement;
+                                                target.src = '/placeholder-image.png';
+                                            }}
+                                        />
+                                    </div>
                                     <div className="flex-grow">
                                         <p className="font-medium">{item.name}</p>
                                         <p className="text-sm text-gray-400">Quantity: {item.quantity}</p>

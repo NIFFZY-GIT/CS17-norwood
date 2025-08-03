@@ -61,7 +61,7 @@ export async function POST(request: Request) {
         name: product.name,
         price: product.price, // Use server price!
         quantity: clientItem.quantity,
-        image: product.image,
+        image: product.imageBase64, // Fixed: use imageBase64 instead of image
       });
     }
 

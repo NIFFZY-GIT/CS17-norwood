@@ -2,9 +2,9 @@
 
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import NextImage from 'next/image';
 import { ScanLine } from 'lucide-react'; // ShoppingCart icon is no longer needed
 import type { Item } from '@/lib/types';
+import { LazyProductImage } from './LazyProductImage';
 
 // Helper to format currency
 const formatCurrency = (amount: number, currency?: string) => {
@@ -65,14 +65,13 @@ const ModernProductCard = ({
           }`}
         >
           <div className="relative w-full h-56 md:h-60 overflow-hidden after:content-[''] after:absolute after:inset-0 after:bg-gradient-to-t after:from-black/60 after:to-transparent after:opacity-0 group-hover:after:opacity-100 after:transition-opacity after:duration-500">
-            <NextImage
-              src={item.imageBase64 || '/placeholder-image.png'}
-              alt={item.name || 'Product image'}
-              fill
-              style={{ objectFit: 'cover' }}
-              className="transition-transform duration-500 ease-in-out group-hover:scale-105"
-              unoptimized={!!item.imageBase64?.startsWith('data:image')}
-              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            <LazyProductImage
+              itemId={item._id}
+              itemName={item.name || 'Product image'}
+              className="transition-transform duration-500 ease-in-out group-hover:scale-105 object-cover"
+              width={300}
+              height={240}
+              priority={index < 6} // Load first 6 images immediately
             />
             <div className="absolute top-3 right-3">
               {!item.inStock ? (
