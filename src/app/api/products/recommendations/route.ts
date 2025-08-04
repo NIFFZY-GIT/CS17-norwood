@@ -12,49 +12,52 @@ interface UserFromDB extends Omit<User, '_id'> {
 }
 
 export async function GET() {
+  console.log('RECOMMENDATIONS API: Starting recommendation fetch');
   const session = await getSession();
-
-  if (!session || !session.userId) {
-    return NextResponse.json({ recommendations: [] });
-  }
+  console.log('RECOMMENDATIONS API: Session status:', !!session, session?.userId);
 
   try {
+    console.log('RECOMMENDATIONS API: Connecting to database');
     const client = await clientPromise;
     const dbName = process.env.MONGODB_DB_NAME;
     if (!dbName) throw new Error("MONGODB_DB_NAME is not set.");
     const db = client.db(dbName);
 
-    // Use the DB-specific type for the collection
-    const usersCollection = db.collection<UserFromDB>('users');
+    // Optimize: Get items and user data in parallel
+    const [allItems, user] = await Promise.all([
+      db.collection<Item>('items').find({ inStock: true }).limit(20).toArray(), // Limit items for better performance
+      session?.userId 
+        ? db.collection<UserFromDB>('users').findOne({ _id: new ObjectId(session.userId) })
+        : null
+    ]);
 
-    // --- THE FIX IS HERE: No more 'as any' ---
-    // This query is now fully type-safe.
-    const user = await usersCollection.findOne({
-      _id: new ObjectId(session.userId),
-    });
-
-    if (!user) {
-      return NextResponse.json({ message: 'User not found' }, { status: 404 });
+    console.log('RECOMMENDATIONS API: Found', allItems.length, 'items in stock');
+    
+    if (!allItems.length) {
+      console.log('RECOMMENDATIONS API: No items found, returning empty array');
+      return NextResponse.json({ recommendations: [] });
     }
 
-    const allItems = await db.collection<Item>('items').find({ inStock: true }).toArray();
-    const userPreference = user.preferences?.category;
+    let finalRecommendations: Item[];
+    const userPreference = user?.preferences?.category;
+    console.log('RECOMMENDATIONS API: User preference category:', userPreference);
 
-    let sortedItems: Item[];
-
-    if (userPreference) {
-      sortedItems = allItems.sort((a, b) => {
-        const aMatches = a.category === userPreference;
-        const bMatches = b.category === userPreference;
-        if (aMatches && !bMatches) return -1;
-        if (!aMatches && bMatches) return 1;
-        return 0;
-      });
+    if (userPreference && session?.userId) {
+      console.log('RECOMMENDATIONS API: Sorting by user preference:', userPreference);
+      // Prefer items matching user category, then others
+      const matchingItems = allItems.filter(item => item.category === userPreference);
+      const otherItems = allItems.filter(item => item.category !== userPreference);
+      finalRecommendations = [...matchingItems, ...otherItems].slice(0, RECOMMENDATION_COUNT);
     } else {
-      sortedItems = allItems.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      console.log('RECOMMENDATIONS API: No user preference, using most recent items');
+      // Default: most recently created items
+      finalRecommendations = allItems
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        .slice(0, RECOMMENDATION_COUNT);
     }
 
-    const finalRecommendations = sortedItems.slice(0, RECOMMENDATION_COUNT);
+    console.log('RECOMMENDATIONS API: Returning', finalRecommendations.length, 'recommendations');
+    console.log('RECOMMENDATIONS API: Recommendation names:', finalRecommendations.map(item => item.name));
     return NextResponse.json({ recommendations: finalRecommendations });
 
   } catch (error) {

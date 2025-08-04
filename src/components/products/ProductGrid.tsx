@@ -16,6 +16,13 @@ export function ProductGrid({ items, recommendedItems, selectedCategory }: Produ
   const safeItems = Array.isArray(items) ? items : [];
   const safeRecommendedItems = Array.isArray(recommendedItems) ? recommendedItems : [];
 
+  console.log('ProductGrid received:', { 
+    itemsLength: safeItems.length, 
+    recommendedLength: safeRecommendedItems.length, 
+    selectedCategory,
+    firstItem: safeItems[0]
+  });
+
   if (safeItems.length === 0 && safeRecommendedItems.length === 0) {
     return (
       <motion.div

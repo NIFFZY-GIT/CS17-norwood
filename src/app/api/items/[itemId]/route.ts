@@ -54,6 +54,9 @@ export async function PUT(
   request: NextRequest,
   { params }: RouteParams // Use the explicit RouteParams interface
 ) {
+  const startTime = Date.now();
+  console.log(`PUT /api/items/[itemId]: Starting update request`);
+  
   const { itemId } = await params;
   const session = await getSession();
   if (!session?.userId) return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
@@ -61,6 +64,8 @@ export async function PUT(
 
   try {
     const body: Partial<Omit<Item, '_id'>> = await request.json();
+    console.log(`PUT /api/items/${itemId}: Received update data:`, Object.keys(body));
+    
     if (Object.keys(body).length === 0) {
       return NextResponse.json({ message: 'No fields to update' }, { status: 400 });
     }
@@ -69,18 +74,25 @@ export async function PUT(
     const db = client.db(process.env.MONGODB_DB_NAME!);
     const itemsCollection = db.collection<ItemFromDB>('items');
 
-    const existingItem = await itemsCollection.findOne({ _id: new ObjectId(itemId) });
-    if (!existingItem) {
-      return NextResponse.json({ message: 'Item not found' }, { status: 404 });
+    // Only validate price logic if relevant fields are being updated
+    if (body.price !== undefined || body.originalPrice !== undefined) {
+      console.log(`PUT /api/items/${itemId}: Price validation needed - checking existing item`);
+      const existingItem = await itemsCollection.findOne({ _id: new ObjectId(itemId) });
+      if (!existingItem) {
+        console.log(`PUT /api/items/${itemId}: Item not found`);
+        return NextResponse.json({ message: 'Item not found' }, { status: 404 });
+      }
+
+      const priceForValidation = body.price ?? existingItem.price;
+      const originalPriceForValidation = body.originalPrice ?? existingItem.originalPrice;
+
+      if (originalPriceForValidation !== undefined && priceForValidation >= originalPriceForValidation) {
+        console.log(`PUT /api/items/${itemId}: Price validation failed - price: ${priceForValidation}, originalPrice: ${originalPriceForValidation}`);
+        return NextResponse.json({ message: 'Original price must be greater than the current price.' }, { status: 400 });
+      }
     }
 
-    const priceForValidation = body.price ?? existingItem.price;
-    const originalPriceForValidation = body.originalPrice ?? existingItem.originalPrice;
-
-    if (originalPriceForValidation !== undefined && priceForValidation >= originalPriceForValidation) {
-      return NextResponse.json({ message: 'Original price must be greater than the current price.' }, { status: 400 });
-    }
-
+    console.log(`PUT /api/items/${itemId}: Updating item in database`);
     const updateResult = await itemsCollection.findOneAndUpdate(
       { _id: new ObjectId(itemId) },
       { $set: body },
@@ -88,6 +100,7 @@ export async function PUT(
     );
 
     if (!updateResult) {
+      console.log(`PUT /api/items/${itemId}: Item not found during update`);
       return NextResponse.json({ message: 'Item not found during update' }, { status: 404 });
     }
 
@@ -99,9 +112,12 @@ export async function PUT(
       category: restOfUpdatedDoc.category ?? 'Uncategorized',
     };
 
+    const duration = Date.now() - startTime;
+    console.log(`PUT /api/items/${itemId}: Successfully updated item in ${duration}ms`);
     return NextResponse.json(responseItem, { status: 200 });
   } catch (error) {
-    console.error(`PUT /api/items/${itemId}:`, error);
+    const duration = Date.now() - startTime;
+    console.error(`PUT /api/items/${itemId}: Error after ${duration}ms:`, error);
     return NextResponse.json({ message: 'An unknown server error occurred' }, { status: 500 });
   }
 }

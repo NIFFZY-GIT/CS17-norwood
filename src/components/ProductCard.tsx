@@ -58,9 +58,7 @@ const ModernProductCard = ({
         aria-label={`View details for ${item.name || 'product'}`}
       >
         <div
-          className={`group relative flex flex-col backdrop-blur-lg border rounded-xl shadow-lg overflow-hidden transition-all duration-300 ease-out hover:shadow-xl hover:shadow-black/40 hover:ring-1 h-full bg-black/30 ${
-            isRecommended ? 'border-amber-400 border-2' : 'border-slate-700/50'
-          } hover:ring-amber-500/60 ${
+          className={`group relative flex flex-col backdrop-blur-lg border rounded-xl shadow-lg overflow-hidden transition-all duration-300 ease-out hover:shadow-xl hover:shadow-black/40 hover:ring-1 h-full bg-black/30 border-slate-700/50 hover:ring-amber-500/60 ${
             isFirstRowRecommended ? 'bg-gradient-to-b from-amber-500/10 to-transparent' : ''
           }`}
         >
@@ -71,7 +69,7 @@ const ModernProductCard = ({
               className="transition-transform duration-500 ease-in-out group-hover:scale-105 object-cover"
               width={300}
               height={240}
-              priority={index < 6} // Load first 6 images immediately
+              priority={false} // Let LazyProductImage handle loading strategy
             />
             <div className="absolute top-3 right-3">
               {!item.inStock ? (
