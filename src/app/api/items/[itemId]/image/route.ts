@@ -27,7 +27,14 @@ export async function GET(
       return NextResponse.json({ message: 'Image not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ imageBase64: item.imageBase64 });
+    // Create response with caching headers
+    const response = NextResponse.json({ imageBase64: item.imageBase64 });
+    
+    // Add cache headers for better performance
+    response.headers.set('Cache-Control', 'public, max-age=3600, s-maxage=3600'); // 1 hour cache
+    response.headers.set('ETag', `"${itemId}"`);
+    
+    return response;
   } catch (error) {
     console.error('GET /api/items/[itemId]/image: Error:', error);
     return NextResponse.json({ message: 'Server error' }, { status: 500 });

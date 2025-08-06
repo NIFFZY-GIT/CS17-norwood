@@ -110,30 +110,56 @@ export default function AddItemModal({ isOpen, onClose, onItemSaved, editingItem
     }
 
     const payload: Partial<Omit<Item, '_id'>> = {
-      name, description, itemCode, category, imageBase64,
+      name, description, itemCode, category,
       price: numericPrice,
       currency,
       inStock,
       originalPrice: numericOriginalPrice,
     };
 
-    if (isEditing && editingItem && imageBase64 === editingItem.imageBase64) {
-      delete payload.imageBase64;
+    // Only include imageBase64 if it's a new item or the image has actually changed
+    if (!isEditing || (isEditing && editingItem && imageBase64 !== editingItem.imageBase64)) {
+      payload.imageBase64 = imageBase64;
     }
 
+    console.log(`AddItemModal: ${isEditing ? 'Updating' : 'Creating'} item with payload keys:`, Object.keys(payload));
+    
     const endpoint = isEditing ? `/api/items/${editingItem!._id}` : '/api/items';
     const method = isEditing ? 'PUT' : 'POST';
 
     try {
+      const startTime = Date.now();
+      
+      // Add timeout to prevent hanging requests
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+      
       const res = await fetch(endpoint, {
-        method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
+        method, 
+        headers: { 'Content-Type': 'application/json' }, 
+        body: JSON.stringify(payload),
+        signal: controller.signal,
       });
-      if (!res.ok) throw new Error((await res.json()).message || 'An error occurred while saving.');
+      
+      clearTimeout(timeoutId);
+      const duration = Date.now() - startTime;
+      console.log(`AddItemModal: ${method} ${endpoint} completed in ${duration}ms`);
+      
+      if (!res.ok) {
+        const errorData = await res.json();
+        console.error(`AddItemModal: ${method} ${endpoint} failed:`, errorData);
+        throw new Error(errorData.message || 'An error occurred while saving.');
+      }
+      
       const savedItemData: Item = await res.json();
       onItemSaved(savedItemData, isEditing);
       onClose();
     } catch (error) {
-      setError(error instanceof Error ? error.message : String(error));
+      if (error instanceof Error && error.name === 'AbortError') {
+        setError('Request timed out. Please try again.');
+      } else {
+        setError(error instanceof Error ? error.message : String(error));
+      }
       console.error("Submission failed:", error);
     } finally {
       setIsLoading(false);

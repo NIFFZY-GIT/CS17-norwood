@@ -1,8 +1,8 @@
 'use client';
 
 import { Item } from '@/lib/types';
-import NextImage from 'next/image';
 import { DollarSign, ScanLine, Pencil, Trash2, CheckCircle2, XCircle } from 'lucide-react';
+import { LazyProductImage } from '../LazyProductImage';
 
 // A small helper for consistent currency formatting
 const formatCurrency = (amount: number, currency: Item['currency']) => {
@@ -19,19 +19,18 @@ interface ItemCardProps {
 }
 
 export default function ItemCard({ item, onEdit, onDelete }: ItemCardProps) {
-  const imgSrc = item.imageBase64 || "/placeholder-image.png";
   const isSale = item.originalPrice && item.originalPrice > item.price;
 
   return (
     <div className="bg-white dark:bg-slate-800 rounded-lg shadow-lg overflow-hidden flex flex-col h-full transition-all duration-300 ease-in-out hover:shadow-xl hover:scale-[1.02]">
       <div className="relative w-full h-40 xs:h-48 flex-shrink-0">
-        <NextImage
-          src={imgSrc}
-          alt={item.name}
-          fill
-          style={{ objectFit: 'cover' }}
-          className="bg-slate-100 dark:bg-slate-700"
-          unoptimized={imgSrc.startsWith('data:image')}
+        <LazyProductImage
+          itemId={item._id}
+          itemName={item.name}
+          className="object-cover w-full h-full bg-slate-100 dark:bg-slate-700"
+          width={300}
+          height={192}
+          priority={false}
         />
         {/* --- STOCK STATUS BADGE --- */}
         <div className="absolute top-2 left-2">

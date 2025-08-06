@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Item } from '@/lib/types';
-import { Loader2, ServerCrash, Sparkles, Leaf, Flame } from 'lucide-react';
+import { Loader2, ServerCrash, Sparkles, Leaf, Flame, PackageSearch } from 'lucide-react';
 import { Toaster } from 'sonner';
 import { RecommendedSection } from '@/components/products/RecommendedSection';
 import { CategorySidebar } from '@/components/products/CategorySidebar';
@@ -50,54 +50,84 @@ export default function ProductsPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    console.log('useEffect running - Products page mounted');
     const fetchItems = async () => {
+      console.log('fetchItems function called');
       setIsLoading(true);
       setError(null);
       try {
-        // Fetch items without images first for faster initial load
-        const res = await fetch('/api/items?includeImages=false&limit=50', { 
-          headers: { Accept: 'application/json' } 
-        });
+        console.log('Starting API fetch...');
+        
+        // Simple fetch without complex headers
+        const res = await fetch('/api/items?includeImages=false&limit=50');
+        
+        console.log('API response status:', res.status, res.ok);
         
         if (!res.ok) {
-          const errorData = await res.json();
-          throw new Error(errorData.message || `HTTP error ${res.status}`);
+          throw new Error(`HTTP error ${res.status}`);
         }
 
         const data = await res.json();
-        const items = data.items || data; // Handle both old and new response format
-        setAllItems(Array.isArray(items) ? items : []);
-
-        // Fetch recommendations in parallel
-        const recommendationsRes = await fetch("/api/recommendation");
-        if (!recommendationsRes.ok) {
-          console.error('Failed to fetch recommendations:', await recommendationsRes.json());
-          setRecommendedItems([]);
-        } else {
-          const recommendationsData: Item[] = await recommendationsRes.json();
-          setRecommendedItems(Array.isArray(recommendationsData) ? recommendationsData : []);
-        }
+        console.log('API Response received:', { 
+          isArray: Array.isArray(data), 
+          length: Array.isArray(data) ? data.length : 'Not array',
+          firstItem: Array.isArray(data) && data.length > 0 ? data[0]?.name : 'No items'
+        });
+        
+        // Ensure we have an array and set it
+        const items = Array.isArray(data) ? data : [];
+        console.log('Setting allItems to array of length:', items.length);
+        setAllItems(items);
+        
+        // Simple recommendations fallback
+        setRecommendedItems(items.slice(0, 4));
+        
       } catch (err: unknown) {
-        const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
-        console.error('Fetch items error:', err);
+        const errorMessage = err instanceof Error ? err.message : 'Failed to load products';
+        console.error('Fetch error:', err);
         setError(errorMessage);
+        setAllItems([]); // Ensure we have a fallback
       } finally {
+        console.log('Setting loading to false');
         setIsLoading(false);
       }
     };
+    
+    console.log('About to call fetchItems');
     fetchItems();
+    console.log('fetchItems called');
   }, []);
 
+  // Simplified categories calculation
   const categories = useMemo(() => {
-    if (allItems.length === 0) return [];
-    const uniqueCategories = new Set(allItems.map((item) => item.category));
-    return ['All', ...Array.from(uniqueCategories)];
+    if (!Array.isArray(allItems) || allItems.length === 0) {
+      console.log('Categories: No items available');
+      return ['All'];
+    }
+    const uniqueCategories = [...new Set(allItems.map(item => item.category || 'Uncategorized'))];
+    console.log('Categories calculated:', ['All', ...uniqueCategories]);
+    return ['All', ...uniqueCategories];
   }, [allItems]);
 
+  // Simplified filtering
   const filteredItems = useMemo(() => {
-    if (selectedCategory === 'All') return allItems;
+    if (!Array.isArray(allItems)) {
+      console.log('Filtering: allItems is not an array', typeof allItems);
+      return [];
+    }
+    
+    console.log('Filtering items:', { 
+      selectedCategory, 
+      totalItems: allItems.length, 
+      categories: categories.length 
+    });
+    
+    if (selectedCategory === 'All') {
+      return allItems;
+    }
+    
     return allItems.filter((item) => item.category === selectedCategory);
-  }, [selectedCategory, allItems]);
+  }, [selectedCategory, allItems, categories]);
 
   return (
     <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="relative min-h-screen bg-gray-900 text-white">
@@ -119,13 +149,19 @@ export default function ProductsPage() {
             </motion.div>
 
             {isLoading ? (
-              <div className="flex justify-center items-center h-80">
-                <Loader2 className="animate-spin text-amber-500" size={48} />
+              <div className="flex flex-col justify-center items-center h-80">
+                <Loader2 className="animate-spin text-amber-500 mb-4" size={48} />
+                <p className="text-slate-300">Loading products...</p>
               </div>
             ) : error ? (
               <div className="text-center py-12 px-8 bg-red-900/50 rounded-xl">
                 <ServerCrash size={60} className="mx-auto text-red-300 mb-5" />
                 <p>{error}</p>
+              </div>
+            ) : allItems.length === 0 ? (
+              <div className="text-center py-12 px-8 bg-gray-800/50 rounded-xl">
+                <PackageSearch size={60} className="mx-auto text-gray-400 mb-5" />
+                <p className="text-gray-300">No products available at the moment.</p>
               </div>
             ) : (
               <ProductGrid 
