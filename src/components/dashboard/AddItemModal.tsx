@@ -205,7 +205,7 @@ export default function AddItemModal({ isOpen, onClose, onItemSaved, editingItem
 
           <button type="submit" disabled={isLoading} className="w-full bg-sky-500 hover:bg-sky-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors flex items-center justify-center disabled:opacity-70 mt-6">{isLoading && <Loader2 className="animate-spin mr-2" size={20} />}{isLoading ? (isEditing ? 'Updating...' : 'Adding...') : (isEditing ? 'Save Changes' : 'Add Item')}</button>
         </form>
-        <div className="mt-6 p-3 bg-amber-50 dark:bg-amber-900 border border-amber-200 dark:border-amber-700 rounded-md text-center"><p className="text-xs text-amber-700 dark:text-amber-300"><strong>Note:</strong> Storing images as Base64 in the DB is for demo purposes. For production, use a dedicated file storage service.</p></div>
+        {/* <div className="mt-6 p-3 bg-amber-50 dark:bg-amber-900 border border-amber-200 dark:border-amber-700 rounded-md text-center"><p className="text-xs text-amber-700 dark:text-amber-300"><strong>Note:</strong> Storing images as Base64 in the DB is for demo purposes. For production, use a dedicated file storage service.</p></div> */}
       </div>
     </div>
   );
