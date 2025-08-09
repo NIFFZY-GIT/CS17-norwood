@@ -24,7 +24,7 @@ export default function CreateUserModal({ isOpen, onClose, onUserCreated }: Crea
     setIsLoading(true);
 
     if (!username || !email || !password) {
-      setError('All fields except admin status are required.');
+      setError('All fields are required to create an admin.');
       setIsLoading(false);
       return;
     }
@@ -33,7 +33,7 @@ export default function CreateUserModal({ isOpen, onClose, onUserCreated }: Crea
       const res = await fetch('/api/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, email, password }),
+        body: JSON.stringify({ username, email, password, isAdmin: true }),
       });
 
       if (res.ok) {
@@ -69,7 +69,7 @@ export default function CreateUserModal({ isOpen, onClose, onUserCreated }: Crea
         <button onClick={handleClose} className="absolute top-4 right-4 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">
           <X size={24} />
         </button>
-        <h2 className="text-2xl font-semibold text-slate-800 dark:text-white mb-6">Create New User</h2>
+        <h2 className="text-2xl font-semibold text-slate-800 dark:text-white mb-6">Create New Admin</h2>
         {error && <div className="p-3 mb-4 text-sm text-red-700 bg-red-100 rounded-lg dark:bg-red-900 dark:text-red-300">{error}</div>}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -96,7 +96,7 @@ export default function CreateUserModal({ isOpen, onClose, onUserCreated }: Crea
 
           <button type="submit" disabled={isLoading} className="w-full bg-sky-500 hover:bg-sky-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors flex items-center justify-center disabled:opacity-70">
             {isLoading && <Loader2 className="animate-spin mr-2" size={20} />}
-            {isLoading ? 'Creating...' : 'Create User'}
+            {isLoading ? 'Creating Admin...' : 'Create Admin'}
           </button>
         </form>
       </div>

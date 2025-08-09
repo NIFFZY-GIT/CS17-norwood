@@ -13,16 +13,19 @@ async function makeUserAdmin() {
     
     // Update the user to admin
     const result = await users.updateOne(
-      { email: 'admin@norwood.com' },
-      { $set: { role: 'admin' } }
+      { email: 'admin123@gmail.com' },
+      { $set: { 
+        role: 'admin',
+        isAdmin: true  // For backward compatibility
+      } }
     );
     
     console.log('Update result:', result);
     
     if (result.matchedCount > 0) {
-      console.log('✅ User admin@norwood.com has been promoted to admin');
+      console.log('✅ User admin123@gmail.com has been promoted to admin');
     } else {
-      console.log('❌ User admin@norwood.com not found');
+      console.log('❌ User admin123@gmail.com not found');
     }
     
   } catch (error) {
