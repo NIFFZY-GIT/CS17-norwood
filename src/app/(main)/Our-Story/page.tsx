@@ -85,7 +85,7 @@ const OurStorySection = () => {
               We hunt down the boldest spices and finest all-natural ingredients. Every batch is crafted with the same passion and attention to detail as our very first. This isn&apos;t just business; it&apos;s our craft.
             </p>
 
-            <Link href="/Products" passHref>
+            <Link href="/Products">
               <motion.button
                 whileHover={{ scale: 1.05, boxShadow: "0px 10px 20px rgba(245, 158, 11, 0.2)" }}
                 whileTap={{ scale: 0.98 }}

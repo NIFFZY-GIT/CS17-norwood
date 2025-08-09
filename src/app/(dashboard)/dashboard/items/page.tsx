@@ -5,6 +5,7 @@ import { Item } from '@/lib/types';
 import ItemCard from '@/components/dashboard/ItemCard';
 import AddItemModal from '@/components/dashboard/AddItemModal';
 import { PlusCircle, Loader2, Package as PackageIcon } from 'lucide-react';
+import { clearImageCache } from '@/components/LazyProductImage';
 
 export default function ItemsPage() {
   const [items, setItems] = useState<Item[]>([]);
@@ -61,6 +62,10 @@ export default function ItemsPage() {
       const res = await fetch(`/api/items/${id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Failed to delete');
       setItems(prev => prev.filter(i => i._id !== id));
+      
+      // Clear image cache for deleted item
+      clearImageCache(id);
+      console.log(`ItemsPage: Cleared image cache for deleted item ${id}`);
     // FIX 2: Change 'any' to 'unknown' and add a type check.
     } catch (err: unknown) {
       if (err instanceof Error) {

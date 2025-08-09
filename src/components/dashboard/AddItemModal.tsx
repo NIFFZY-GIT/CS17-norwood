@@ -4,6 +4,7 @@ import { useState, FormEvent, ChangeEvent, useEffect } from 'react';
 import { X, ImagePlus, Loader2, ScanLine, DollarSign, FolderKanban } from 'lucide-react';
 import { Item } from '@/lib/types';
 import NextImage from 'next/image';
+import { forceRefreshImage } from '@/components/LazyProductImage';
 
 interface AddItemModalProps {
   isOpen: boolean;
@@ -33,6 +34,7 @@ export default function AddItemModal({ isOpen, onClose, onItemSaved, editingItem
   const [currency, setCurrency] = useState<Item['currency']>('LKR');
   const [inStock, setInStock] = useState(true);
   const [originalPrice, setOriginalPrice] = useState<number | ''>('');
+  const [hasNewImage, setHasNewImage] = useState(false); // Track if user selected a new image
 
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -52,6 +54,7 @@ export default function AddItemModal({ isOpen, onClose, onItemSaved, editingItem
         setCurrency(editingItem.currency);
         setInStock(editingItem.inStock);
         setOriginalPrice(editingItem.originalPrice || '');
+        setHasNewImage(false); // Reset new image flag when editing
       } else {
         setName('');
         setDescription('');
@@ -63,6 +66,7 @@ export default function AddItemModal({ isOpen, onClose, onItemSaved, editingItem
         setCurrency('LKR');
         setInStock(true);
         setOriginalPrice('');
+        setHasNewImage(false); // Reset new image flag for new items
       }
       setError('');
       const fileInput = document.getElementById('itemImageFile') as HTMLInputElement | null;
@@ -83,6 +87,7 @@ export default function AddItemModal({ isOpen, onClose, onItemSaved, editingItem
       const dataUrl = await fileToDataUrl(file);
       setImageBase64(dataUrl);
       setImagePreview(dataUrl);
+      setHasNewImage(true); // Mark that user has selected a new image
     } catch (error) {
       console.error("Error converting file to Base64:", error);
       setError('Failed to process image.');
@@ -94,8 +99,16 @@ export default function AddItemModal({ isOpen, onClose, onItemSaved, editingItem
     setIsLoading(true);
     setError('');
 
-    if (!name || !description || !imageBase64 || price === '' || !category) {
-      setError('Name, description, image, price, and category are required.');
+    // For new items, image is required. For editing, image is optional (only if user wants to change it)
+    if (!name || !description || price === '' || !category) {
+      setError('Name, description, price, and category are required.');
+      setIsLoading(false);
+      return;
+    }
+
+    // Only require image for new items
+    if (!isEditing && !imageBase64) {
+      setError('Image is required for new items.');
       setIsLoading(false);
       return;
     }
@@ -117,8 +130,12 @@ export default function AddItemModal({ isOpen, onClose, onItemSaved, editingItem
       originalPrice: numericOriginalPrice,
     };
 
-    // Only include imageBase64 if it's a new item or the image has actually changed
-    if (!isEditing || (isEditing && editingItem && imageBase64 !== editingItem.imageBase64)) {
+    // Only include imageBase64 if it's a new item or the user has selected a new image
+    if (!isEditing) {
+      // For new items, always include the image
+      payload.imageBase64 = imageBase64;
+    } else if (isEditing && hasNewImage) {
+      // For editing, only include image if user selected a new one
       payload.imageBase64 = imageBase64;
     }
 
@@ -152,6 +169,13 @@ export default function AddItemModal({ isOpen, onClose, onItemSaved, editingItem
       }
       
       const savedItemData: Item = await res.json();
+      
+      // Clear image cache and force refresh if we updated the image
+      if (isEditing && hasNewImage && editingItem) {
+        forceRefreshImage(editingItem._id);
+        console.log(`AddItemModal: Force refreshed image for updated item ${editingItem._id}`);
+      }
+      
       onItemSaved(savedItemData, isEditing);
       onClose();
     } catch (error) {

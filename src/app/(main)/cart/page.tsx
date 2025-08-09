@@ -237,10 +237,11 @@ export default function CartPage() {
                     <span>${total.toFixed(2)}</span>
                   </div>
                   
-                  <Link href="/checkout" legacyBehavior>
-                    <a className="w-full block text-center bg-amber-500 hover:bg-amber-600 text-gray-900 font-bold py-3 px-4 rounded-lg transition-colors mt-6">
-                      Proceed to Checkout
-                    </a>
+                  <Link 
+                    href="/checkout" 
+                    className="w-full block text-center bg-amber-500 hover:bg-amber-600 text-gray-900 font-bold py-3 px-4 rounded-lg transition-colors mt-6"
+                  >
+                    Proceed to Checkout
                   </Link>
                 </div>
               </motion.div>

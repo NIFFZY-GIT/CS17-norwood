@@ -30,9 +30,19 @@ export async function GET(
     // Create response with caching headers
     const response = NextResponse.json({ imageBase64: item.imageBase64 });
     
-    // Add cache headers for better performance
-    response.headers.set('Cache-Control', 'public, max-age=3600, s-maxage=3600'); // 1 hour cache
-    response.headers.set('ETag', `"${itemId}"`);
+    // Create ETag based on item content to invalidate cache when image changes
+    const imageHash = Buffer.from(item.imageBase64.slice(-50)).toString('base64'); // Use last 50 chars as simple hash
+    const etag = `"${itemId}-${imageHash}"`;
+    
+    // Check if client has current version
+    const clientETag = request.headers.get('if-none-match');
+    if (clientETag === etag) {
+      return new NextResponse(null, { status: 304 }); // Not Modified
+    }
+    
+    // Add cache headers - shorter cache time and proper etag
+    response.headers.set('Cache-Control', 'public, max-age=300, s-maxage=300'); // 5 minute cache instead of 1 hour
+    response.headers.set('ETag', etag);
     
     return response;
   } catch (error) {
