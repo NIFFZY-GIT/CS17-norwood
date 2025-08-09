@@ -1,7 +1,7 @@
 // components/dashboard/Sidebar.tsx
 'use client';
 import Link from 'next/link';
-import { LayoutDashboard, Package, BarChart3, LogOut, Settings, X as XIcon } from 'lucide-react';
+import { LayoutDashboard, Package, LogOut, Settings, X as XIcon } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { Briefcase, FileText } from "lucide-react";
 
@@ -10,7 +10,7 @@ const navItems = [
   { href: '/dashboard', label: 'Overview', icon: LayoutDashboard },
   { href: '/dashboard/items', label: 'My Items', icon: Package },
   { href: '/dashboard/orders', label: 'My Orders', icon: Package },
-  { href: '/dashboard/analytics', label: 'Analytics', icon: BarChart3 },
+  // { href: '/dashboard/analytics', label: 'Analytics', icon: BarChart3 },
   { href: '/dashboard/settings', label: 'Settings', icon: Settings },
     { href: '/dashboard/vacancies', label: 'Vacancies', icon: Briefcase },
   { href: '/dashboard/applications', label: 'Applications', icon: FileText }
