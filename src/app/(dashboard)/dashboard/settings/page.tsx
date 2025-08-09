@@ -1,25 +1,23 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-// FIX 1: The unused 'getSession' import is removed.
 import { User } from '@/lib/types';
 import { SessionData } from '@/lib/session';
 import UserListItem from '@/components/dashboard/settings/UserListItem';
 import CreateUserModal from '@/components/dashboard/settings/CreateUserModal';
-import { PlusCircle, Users, Loader2, ShieldAlert } from 'lucide-react';
+import { PlusCircle, Loader2, ShieldAlert, Shield } from 'lucide-react';
 
 export default function SettingsPage() {
-  const [users, setUsers] = useState<User[]>([]);
+  const [admins, setAdmins] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentSession, setCurrentSession] = useState<SessionData | null>(null);
 
   useEffect(() => {
-    // A simple function to get session data on the client if needed
     const fetchClientSession = async () => {
         try {
-            const res = await fetch('/api/auth/session'); // Assuming you have such an endpoint
+            const res = await fetch('/api/auth/session');
             if (res.ok) {
                 const data = await res.json();
                 setCurrentSession(data);
@@ -29,15 +27,18 @@ export default function SettingsPage() {
         }
     };
 
-    const fetchUsers = async () => {
+    const fetchAdmins = async () => {
         setIsLoading(true);
         setError(null);
         try {
             const res = await fetch('/api/users');
             if (!res.ok) throw new Error('Failed to fetch users');
-            const data = await res.json();
-            setUsers(data);
-        // FIX 2: Change 'any' to 'unknown' and perform a type check.
+            const allUsers: User[] = await res.json();
+            // Filter for admin users using both role and isAdmin for backward compatibility
+            const adminUsers = allUsers.filter(user => 
+                user.role === 'admin' || user.isAdmin === true
+            );
+            setAdmins(adminUsers);
         } catch (err: unknown) {
             if (err instanceof Error) {
                 setError(err.message);
@@ -49,25 +50,24 @@ export default function SettingsPage() {
         }
     };
     
-    // Using Promise.all to run both fetches concurrently
-    Promise.all([fetchClientSession(), fetchUsers()]);
-
+    Promise.all([fetchClientSession(), fetchAdmins()]);
   }, []);
 
-
-  const handleUserCreated = (newUser: User) => {
-    setUsers(prevUsers => [newUser, ...prevUsers]);
+  const handleAdminCreated = (newAdmin: User) => {
+    // Check if new user is admin using both fields for compatibility
+    if (newAdmin.role === 'admin' || newAdmin.isAdmin === true) {
+      setAdmins(prevAdmins => [newAdmin, ...prevAdmins]);
+    }
     setIsModalOpen(false);
   };
 
-  const handleDeleteUser = async (userId: string, username: string) => {
-    if (!window.confirm(`Are you sure you want to delete user "${username}"?`)) return;
+  const handleDeleteAdmin = async (adminId: string, username: string) => {
+    if (!window.confirm(`Are you sure you want to delete user "${username}"? This action cannot be undone.`)) return;
 
     try {
-      const res = await fetch(`/api/users/${userId}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Failed to delete user');
-      setUsers(prevUsers => prevUsers.filter(user => user._id !== userId));
-    // FIX 3: Change 'any' to 'unknown' and perform a type check.
+      const res = await fetch(`/api/users/${adminId}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Failed to delete admin');
+      setAdmins(prevAdmins => prevAdmins.filter(admin => admin._id !== adminId));
     } catch (err: unknown) {
         if (err instanceof Error) {
             setError(err.message);
@@ -81,16 +81,16 @@ export default function SettingsPage() {
     <>
       <header className="flex flex-col sm:flex-row justify-between sm:items-center mb-6 sm:mb-8 gap-4">
         <div className="flex items-center">
-          <Users className="w-7 h-7 sm:w-8 sm:h-8 text-sky-500 mr-2 sm:mr-3" />
-          <h1 className="text-2xl sm:text-3xl font-bold text-slate-800 dark:text-white">User Management</h1>
+          <Shield className="w-7 h-7 sm:w-8 sm:h-8 text-sky-500 mr-2 sm:mr-3" />
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-800 dark:text-white">Admin Management</h1>
         </div>
         <button
           onClick={() => setIsModalOpen(true)}
           className="bg-sky-500 hover:bg-sky-600 text-white font-semibold py-2 px-3 sm:px-4 rounded-lg flex items-center transition-colors self-start sm:self-center"
         >
           <PlusCircle size={20} className="mr-1 sm:mr-2" />
-           <span className="hidden sm:inline">Add New User</span>
-           <span className="sm:hidden text-sm">Add User</span>
+           <span className="hidden sm:inline">Add New Admin</span>
+           <span className="sm:hidden text-sm">Add Admin</span>
         </button>
       </header>
 
@@ -114,19 +114,21 @@ export default function SettingsPage() {
 
       {!isLoading && !error && (
         <div className="space-y-3">
-          {users.length > 0 ? (
-            users.map((user) => (
+          {admins.length > 0 ? (
+            admins.map((admin) => (
               <UserListItem
-                key={user._id}
-                user={user}
+                key={admin._id}
+                user={admin}
                 currentUserId={currentSession?.userId}
-                onDelete={handleDeleteUser}
+                onDelete={handleDeleteAdmin}
               />
             ))
           ) : (
             <div className="text-center py-10">
-              <Users size={64} className="mx-auto text-slate-400 dark:text-slate-500 mb-4" />
-              <h2 className="text-xl font-semibold text-slate-700 dark:text-slate-300 mb-2">No users found.</h2>
+              <Shield size={64} className="mx-auto text-slate-400 dark:text-slate-500 mb-4" />
+              <h2 className="text-xl font-semibold text-slate-700 dark:text-slate-300 mb-2">No admins found.</h2>
+              {/* FIX 1: Escaped the double quotes to resolve the ESLint error. */}
+              <p className="text-slate-500 dark:text-slate-400">Click &quot;Add New Admin&quot; to create one.</p>
             </div>
           )}
         </div>
@@ -135,7 +137,7 @@ export default function SettingsPage() {
       <CreateUserModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        onUserCreated={handleUserCreated}
+        onUserCreated={handleAdminCreated}
       />
     </>
   );

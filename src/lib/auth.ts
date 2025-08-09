@@ -23,22 +23,26 @@ export const authOptions: NextAuthOptions = {
         }
 
         // 1. Use your existing function to find the user
-        const user = findUser(credentials.username);
+        const user = await findUser(credentials.username);
 
         if (!user) {
           return null; // User not found
         }
 
         // 2. Use your existing bcrypt logic to check the password
-        const isMatch = await bcrypt.compare(credentials.password, user.password);
+        const isMatch = await bcrypt.compare(credentials.password, user.password || '');
 
         if (isMatch) {
-          // SUCCESS: Return the user object. NextAuth handles session creation.
-          // IMPORTANT: The object returned here MUST have an 'id' property.
-          return user; 
+          // SUCCESS: Return the user object with proper id field for NextAuth
+          return {
+            id: user._id,
+            username: user.username || user.email,
+            email: user.email,
+            role: user.isAdmin ? 'admin' : 'user'
+          }; 
         } else {
           // FAILURE: Passwords do not match
-          return null; 
+          return null;
         }
       }
     })

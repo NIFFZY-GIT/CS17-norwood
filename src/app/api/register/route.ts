@@ -33,6 +33,7 @@ export async function POST(req: Request) {
       email: email.toLowerCase(),
       password: hashedPassword,
       role: 'user',
+      isAdmin: false, // For backward compatibility with existing queries
       createdAt: new Date(),
       // Add preferences if they exist, otherwise default to an empty object
       preferences: preferences || {},

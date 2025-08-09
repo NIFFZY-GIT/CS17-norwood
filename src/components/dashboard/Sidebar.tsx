@@ -1,7 +1,7 @@
 // components/dashboard/Sidebar.tsx
 'use client';
 import Link from 'next/link';
-import { LayoutDashboard, Package, LogOut, Settings, X as XIcon } from 'lucide-react';
+import { LayoutDashboard, Package, LogOut, Settings, X as XIcon, Home } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { Briefcase, FileText } from "lucide-react";
 
@@ -39,7 +39,7 @@ export default function Sidebar({ username, isMobileOpen, onMobileClose }: Sideb
 
   const baseClasses = `bg-slate-800 text-slate-100 p-4 sm:p-6 flex flex-col 
                        fixed left-0 z-40 w-64 transition-transform duration-300 ease-in-out
-                       top-20 h-[calc(100vh-theme(space.20))]`; // Correctly uses top-20 and calculates height
+                       top-0 h-screen`; // Changed to top-0 and h-screen for full height without navbar offset
 
   const desktopClasses = "md:translate-x-0";
   const mobileClasses = isMobileOpen ? "translate-x-0" : "-translate-x-full";
@@ -86,10 +86,18 @@ export default function Sidebar({ username, isMobileOpen, onMobileClose }: Sideb
             ))}
           </ul>
         </nav>
-        <div>
+        <div className="space-y-2">
+          <Link
+            href="/"
+            onClick={() => { if (isMobileOpen) onMobileClose(); }}
+            className="w-full flex items-center space-x-3 p-3 rounded-md text-slate-300 hover:bg-blue-600 hover:text-white transition-colors"
+          >
+            <Home className="w-5 h-5" />
+            <span>Go to Homepage</span>
+          </Link>
           <button
             onClick={handleLogout}
-            className="w-full flex items-center space-x-3 p-3 mt-4 rounded-md text-slate-300 hover:bg-red-600 hover:text-white transition-colors"
+            className="w-full flex items-center space-x-3 p-3 rounded-md text-slate-300 hover:bg-red-600 hover:text-white transition-colors"
           >
             <LogOut className="w-5 h-5" />
             <span>Logout</span>

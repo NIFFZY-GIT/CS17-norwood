@@ -3,25 +3,24 @@ import { NextResponse, NextRequest } from 'next/server';
 import clientPromise from '@/lib/mongodb';
 import { getSession } from '@/lib/session';
 import { User } from '@/lib/types';
-import { ObjectId, Collection, Filter, InsertOneResult } from 'mongodb'; // Import InsertOneResult
+import { ObjectId } from 'mongodb';
 import bcrypt from 'bcryptjs';
 
-// Interface for data from DB (includes passwordHash, but this will be projected out for GET)
+// Interface for database document - handles both old and new schema
 interface UserDocument {
     _id: ObjectId;
     username: string;
     email?: string;
     passwordHash: string;
     createdAt: Date;
-    isAdmin?: boolean;
+    role?: 'admin' | 'user'; // New role field
+    isAdmin?: boolean; // Legacy field for backward compatibility
 }
 
-// Interface for the document to be inserted (MongoDB will add _id)
-// This is essentially what you pass to insertOne.
+// This represents the data we will insert into the database (without _id).
 type DocumentToInsert = Omit<UserDocument, '_id'>;
 
-
-// GET all users - NO ADMIN CHECK
+// GET all users
 export async function GET() {
     const session = await getSession();
     if (!session?.userId) {
@@ -36,17 +35,21 @@ export async function GET() {
     try {
         const client = await clientPromise;
         const db = client.db(process.env.MONGODB_DB_NAME);
-        const usersCollection: Collection<UserDocument> = db.collection<UserDocument>('users');
+        const usersCollection = db.collection<UserDocument>('users');
 
         const dbUsers = await usersCollection.find({}, {
             projection: { passwordHash: 0 }
         }).sort({ createdAt: -1 }).toArray();
 
+        // FIX 2: Map the database document to the User type, handling both new and legacy fields
         const users: User[] = dbUsers.map(dbUser => ({
             _id: dbUser._id.toString(),
+            username: dbUser.username,
             email: dbUser.email || '',
+            // Convert from old isAdmin field or use new role field
+            role: dbUser.role || (dbUser.isAdmin ? 'admin' : 'user'),
+            isAdmin: dbUser.isAdmin || (dbUser.role === 'admin'),
             createdAt: dbUser.createdAt,
-            isAdmin: dbUser.isAdmin || false,
         }));
 
         return NextResponse.json(users);
@@ -56,14 +59,15 @@ export async function GET() {
     }
 }
 
+// The request payload can still use 'isAdmin' for convenience, but we'll handle the logic internally.
 interface CreateUserPayload {
     username: string;
     email?: string;
     password?: string;
-    isAdmin?: boolean;
+    isAdmin?: boolean; // The client can send this boolean
 }
 
-// POST /api/users (Create User) - NO ADMIN CHECK
+// POST /api/users (Create User)
 export async function POST(request: NextRequest) {
     const session = await getSession();
     if (!session?.userId) {
@@ -76,7 +80,7 @@ export async function POST(request: NextRequest) {
 
     try {
         const body = await request.json() as CreateUserPayload;
-        const { username, email, password, isAdmin: makeAdmin } = body;
+        const { username, email, password, isAdmin } = body;
 
         if (!username || !password) {
             return NextResponse.json({ message: 'Username and password are required' }, { status: 400 });
@@ -84,9 +88,10 @@ export async function POST(request: NextRequest) {
 
         const client = await clientPromise;
         const db = client.db(process.env.MONGODB_DB_NAME);
-        const usersCollection: Collection<UserDocument> = db.collection<UserDocument>('users');
+        const usersCollection = db.collection('users');
 
-        const existingUserQuery: Filter<UserDocument> = { username };
+        // Check for existing user by username or email
+        const existingUserQuery = { username } as Record<string, unknown>;
         if (email) {
             existingUserQuery.$or = [{ username }, { email }];
         }
@@ -102,44 +107,34 @@ export async function POST(request: NextRequest) {
 
         const passwordHash = await bcrypt.hash(password, 10);
 
+        // Create user document with both role and isAdmin for compatibility
         const newUserToInsert: DocumentToInsert = {
             username,
             passwordHash,
             createdAt: new Date(),
-            isAdmin: makeAdmin === true,
+            role: isAdmin === true ? 'admin' : 'user',
+            isAdmin: isAdmin === true,
         };
         if (email) {
             newUserToInsert.email = email;
         }
 
-        // The MongoDB driver's `insertOne` method is typed to accept a document
-        // that does not yet have an _id when the collection schema TSchema includes _id.
-        // The 'DocumentToInsert' type (Omit<UserDocument, '_id'>) should be directly compatible.
-        // If strictness still causes issues, an 'as any' can be a last resort, but usually not needed.
-        const result: InsertOneResult<UserDocument> = await usersCollection.insertOne(newUserToInsert as UserDocument);
-        // The cast `as UserDocument` here might seem counter-intuitive because newUserToInsert lacks `_id`.
-        // However, insertOne's parameter is often typed as `OptionalUnlessRequiredId<TSchema>`,
-        // and `Omit<TSchema, '_id'>` is compatible with that.
-        // The error you got with OptionalId was because OptionalId<UserDocument> makes _id: ObjectId | undefined,
-        // which is not directly what insertOne might expect if its internal type for the document itself is TSchema.
+        const result = await usersCollection.insertOne(newUserToInsert);
 
-        // A more direct approach that often works if the driver's types are well-aligned:
-        // const result = await usersCollection.insertOne(newUserToInsert);
-        // If the above still fails, the `as UserDocument` cast on `newUserToInsert` is telling TS
-        // "trust me, the driver will handle the missing _id for insertion".
-
+        // FIX 4: Construct the response object to match the 'User' type, including 'username' and 'role'.
         const createdUser: User = {
-            _id: result.insertedId.toString(), // result.insertedId will be an ObjectId
+            _id: result.insertedId.toString(),
+            username: newUserToInsert.username,
             email: newUserToInsert.email || '',
+            role: newUserToInsert.role, // Use the new role property
             createdAt: newUserToInsert.createdAt,
-            isAdmin: newUserToInsert.isAdmin || false,
         };
 
         return NextResponse.json(createdUser, { status: 201 });
     } catch (error: unknown) {
         console.error('Error creating user:', error);
         if (error && typeof error === 'object' && 'code' in error && (error as { code: number }).code === 11000) {
-             return NextResponse.json({ message: 'Username or email already exists (duplicate key).' }, { status: 409 });
+             return NextResponse.json({ message: 'Username or email already exists.' }, { status: 409 });
         }
         if (error instanceof Error) {
             return NextResponse.json({ message: `Failed to create user: ${error.message}` }, { status: 500 });

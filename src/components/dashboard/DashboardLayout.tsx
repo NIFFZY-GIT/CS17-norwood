@@ -21,7 +21,7 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
         isMobileOpen={isSidebarOpen}
         onMobileClose={() => setIsSidebarOpen(false)}
       />
-      <main className="flex-1 p-4 sm:p-6 md:p-8 md:ml-64 w-full min-w-0"> {/* min-w-0 prevents flexbox overflow issues */}
+      <main className="flex-1 p-4 sm:p-6 md:p-8 md:ml-64 w-full min-w-0 min-h-screen"> {/* Added min-h-screen to ensure full height */}
         {/* Mobile Header Bar */}
         <div className="md:hidden flex items-center justify-between mb-4 sm:mb-6 p-2 -mx-2 sm:mx-0 rounded-md bg-white dark:bg-slate-800 shadow-sm sticky top-0 z-20"> {/* Increased z-index */}
           <button
