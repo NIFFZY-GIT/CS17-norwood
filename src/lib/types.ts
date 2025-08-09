@@ -35,7 +35,8 @@ export interface QuizPrefs {
  */
 export interface UserSession {
   userId: string;
-  email: string;
+  username: string;
+  email?: string;
   role: 'admin' | 'user'; // This is more explicit and scalable than isAdmin
 }
 
@@ -49,6 +50,7 @@ export interface User {
   password?: string;
   createdAt: Date;
   isAdmin?: boolean; // This can remain for your database schema
+  role?: 'admin' | 'user'; // New role field for consistency
   preferences?: QuizPrefs;
   viewHistory?: string[];
 }

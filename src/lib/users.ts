@@ -1,16 +1,48 @@
-// Example structure for your user object
-export type User = {
-  id: string; // <-- This is required!
-  username: string;
-  password: string; // Hashed password
-  email: string;
-};
+// src/lib/users.ts
+import clientPromise from '@/lib/mongodb';
+import { User } from '@/lib/types';
 
-// Mock user database
-const users: User[] = [
-  { id: 'user-uuid-12345', username: 'testuser', password: '...', email: 'test@example.com' }
-];
+/**
+ * Find a user by username from MongoDB
+ * @param username - The username to search for
+ * @returns Promise<User | null> - The user object or null if not found
+ */
+export async function findUser(username: string): Promise<User | null> {
+  try {
+    const client = await clientPromise;
+    const db = client.db();
+    const usersCollection = db.collection<User>('users');
+    
+    const user = await usersCollection.findOne({ 
+      $or: [
+        { username: username },
+        { email: username } // Allow login with email as well
+      ]
+    });
+    
+    return user;
+  } catch (error) {
+    console.error('Error finding user:', error);
+    return null;
+  }
+}
 
-export function findUser(username: string): User | undefined {
-  return users.find(user => user.username === username);
+/**
+ * Find a user by ID from MongoDB
+ * @param userId - The user ID to search for
+ * @returns Promise<User | null> - The user object or null if not found
+ */
+export async function findUserById(userId: string): Promise<User | null> {
+  try {
+    const client = await clientPromise;
+    const db = client.db();
+    const usersCollection = db.collection<User>('users');
+    
+    const user = await usersCollection.findOne({ _id: userId });
+    
+    return user;
+  } catch (error) {
+    console.error('Error finding user by ID:', error);
+    return null;
+  }
 }
